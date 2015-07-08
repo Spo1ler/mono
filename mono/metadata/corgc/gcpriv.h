@@ -20,7 +20,9 @@
 #define inline
 #endif
 
+class GCMonoObjectWrapper;
 
+typedef OBJECT_HEADER GCMonoObjectWrapper;
 
 #include "gc.h"
 
@@ -1257,7 +1259,7 @@ public:
     void shutdown_gc();
 
     PER_HEAP
-    CObjectHeader* allocate (size_t jsize,
+    OBJECT_HEDER* allocate (size_t jsize,
                              alloc_context* acontext);
 
 #ifdef MULTIPLE_HEAPS
@@ -1268,7 +1270,7 @@ public:
     DWORD gc_thread_stub (void* arg);
 #endif //MULTIPLE_HEAPS
 
-    CObjectHeader* try_fast_alloc (size_t jsize);
+    OBJECT_HEADER* try_fast_alloc (size_t jsize);
 
     // For LOH allocations we only update the alloc_bytes_loh in allocation
     // context - we don't actually use the ptr/limit from it so I am

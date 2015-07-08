@@ -12,6 +12,9 @@
 #include <mono/utils/mono-threads.h>
 #include <mono/utils/mono-counters.h>
 
+#include <mono/metadata/corgc/gc.h>
+
+#define HAVE_COR_GC
 
 #ifdef HAVE_COR_GC
 
@@ -88,12 +91,16 @@ mono_gc_base_init (void)
 void
 mono_gc_collect (int generation)
 {
+    if (!gc_initialized)
+        return;
+
+    GCHeap* pGCHeap = GCHeap::GetGCHeap();
 }
 
 int
 mono_gc_max_generation (void)
 {
-	return 0;
+	return GCHeap::GetMaxGeneration();
 }
 
 int
@@ -123,7 +130,7 @@ mono_gc_get_used_size (void)
 int64_t
 mono_gc_get_heap_size (void)
 {
-	return 2*1024*1024;
+	return 0;
 }
 
 gboolean

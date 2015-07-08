@@ -99,7 +99,6 @@ struct oom_history
 };
 
 /* forward declerations */
-class CObjectHeader;
 class Object;
 
 class GCHeap;

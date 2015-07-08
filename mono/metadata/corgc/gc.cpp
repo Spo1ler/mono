@@ -3561,166 +3561,7 @@ void gset_card (size_t card);
 
 #define free_object_base_size (plug_skew + sizeof(ArrayBase))
 
-class CObjectHeader : public Object
-{
-public:
-
-#ifdef FEATURE_REDHAWK
-    // The GC expects the following methods that are provided by the Object class in the CLR but not provided
-    // by Redhawk's version of Object.
-    DWORD GetNumComponents()
-    {
-        return ((ArrayBase *)this)->GetNumComponents();
-    }
-
-    void Validate(BOOL bDeep=TRUE, BOOL bVerifyNextHeader = TRUE)
-    {
-        if (this == NULL)
-            return;
-
-        BOOL fSmallObjectHeapPtr = FALSE, fLargeObjectHeapPtr = FALSE;
-        fSmallObjectHeapPtr = GCHeap::GetGCHeap()->IsHeapPointer(this, TRUE);
-        if (!fSmallObjectHeapPtr)
-            fLargeObjectHeapPtr = GCHeap::GetGCHeap()->IsHeapPointer(this);
-
-        _ASSERTE(fSmallObjectHeapPtr || fLargeObjectHeapPtr);
-        _ASSERTE(GetMethodTable()->GetBaseSize() >= 8);
-
-#ifdef FEATURE_STRUCTALIGN
-        _ASSERTE(IsStructAligned((BYTE *)this, GetMethodTable()->GetBaseAlignment()));
-#endif // FEATURE_STRUCTALIGN
-
-#ifdef VERIFY_HEAP
-        if (bDeep)
-            GCHeap::GetGCHeap()->ValidateObjectMember(this);
-#endif
-    }
-
-    void ValidatePromote(ScanContext *sc, DWORD flags)
-    {
-        Validate();
-    }
-
-    void ValidateHeap(Object *from, BOOL bDeep)
-    {
-        Validate(bDeep, FALSE);
-    }
-
-    ADIndex GetAppDomainIndex()
-    {
-        return (ADIndex)RH_DEFAULT_DOMAIN_ID;
-    }
-#endif //FEATURE_REDHAWK
-
-    /////
-    //
-    // Header Status Information
-    //
-
-    MethodTable    *GetMethodTable() const
-    {
-        return( (MethodTable *) (((size_t) RawGetMethodTable()) & (~(GC_MARKED))));
-    }
-
-    void SetMarked()
-    {
-        RawSetMethodTable((MethodTable *) (((size_t) RawGetMethodTable()) | GC_MARKED));
-    }
-
-    BOOL IsMarked() const
-    {
-        return !!(((size_t)RawGetMethodTable()) & GC_MARKED);
-    }
-
-    void SetPinned()
-    {
-        assert (!(gc_heap::settings.concurrent));
-        GetHeader()->SetGCBit();
-    }
-
-    BOOL IsPinned() const
-    {
-        return !!((((CObjectHeader*)this)->GetHeader()->GetBits()) & BIT_SBLK_GC_RESERVE);
-    }
-
-    void ClearMarked()
-    {
-        RawSetMethodTable( GetMethodTable() );
-    }
-
-    CGCDesc *GetSlotMap ()
-    {
-        assert (GetMethodTable()->ContainsPointers());
-        return CGCDesc::GetCGCDescFromMT(GetMethodTable());
-    }
-
-    void SetFree(size_t size)
-    {
-        assert (size >= free_object_base_size);
-
-        assert (g_pFreeObjectMethodTable->GetBaseSize() == free_object_base_size);
-        assert (g_pFreeObjectMethodTable->RawGetComponentSize() == 1);
-
-        RawSetMethodTable( g_pFreeObjectMethodTable );
-
-        SIZE_T* numComponentsPtr = (SIZE_T*) &((BYTE*) this)[ArrayBase::GetOffsetOfNumComponents()];
-        *numComponentsPtr = size - free_object_base_size;
-#ifdef VERIFY_HEAP
-        //This introduces a bug in the free list management. 
-        //((void**) this)[-1] = 0;    // clear the sync block,
-        assert (*numComponentsPtr >= 0);
-        if (g_pConfig->GetHeapVerifyLevel() & EEConfig::HEAPVERIFY_GC)
-            memset (((BYTE*)this)+sizeof(ArrayBase), 0xcc, *numComponentsPtr);
-#endif //VERIFY_HEAP
-    }
-
-    void UnsetFree()
-    {
-        size_t size = free_object_base_size - plug_skew;
-
-        // since we only need to clear 2 ptr size, we do it manually
-        PTR_PTR m = (PTR_PTR) this;
-        for (size_t i = 0; i < size / sizeof(PTR_PTR); i++)
-            *(m++) = 0;
-    }
-
-    BOOL IsFree () const
-    {
-        return (GetMethodTable() == g_pFreeObjectMethodTable);
-    }
-
-#ifdef FEATURE_STRUCTALIGN
-    int GetRequiredAlignment () const
-    {
-        return GetMethodTable()->GetRequiredAlignment();
-    }
-#endif // FEATURE_STRUCTALIGN
-
-    BOOL ContainsPointers() const
-    {
-        return GetMethodTable()->ContainsPointers();
-    }
-
-#ifdef COLLECTIBLE_CLASS
-    BOOL Collectible() const
-    {
-        return GetMethodTable()->Collectible();
-    }
-
-    FORCEINLINE BOOL ContainsPointersOrCollectible() const
-    {
-        MethodTable *pMethodTable = GetMethodTable();
-        return (pMethodTable->ContainsPointers() || pMethodTable->Collectible());
-    }
-#endif //COLLECTIBLE_CLASS
-
-    Object* GetObjectBase() const
-    {
-        return (Object*) this;
-    }
-};
-
-#define header(i) ((CObjectHeader*)(i))
+#define header(i) ((GCMonoObjectWrapper*)(i))
 
 #define free_list_slot(x) ((BYTE**)(x))[2]
 #define free_list_undo(x) ((BYTE**)(x))[-1]
@@ -3752,7 +3593,7 @@ BOOL is_plug_padded (BYTE* node){return FALSE;}
 
 inline size_t unused_array_size(BYTE * p)
 {
-    assert(((CObjectHeader*)p)->IsFree());
+    assert(header(p)->IsFree());
 
     SIZE_T* numComponentsPtr = (SIZE_T*)(p + ArrayBase::GetOffsetOfNumComponents());
     return free_object_base_size + *numComponentsPtr;
@@ -8495,7 +8336,7 @@ inline size_t my_get_size (Object* ob)
     MethodTable* mT = header(ob)->GetMethodTable();
     return (mT->GetBaseSize() +
             (mT->HasComponentSize() ?
-             ((size_t)((CObjectHeader*)ob)->GetNumComponents() * mT->RawGetComponentSize()) : 0));
+             ((size_t)(header(ob)->GetNumComponents() * mT->RawGetComponentSize()) : 0));
 }
 
 //#define size(i) header(i)->GetSize()
@@ -10695,7 +10536,7 @@ void allocator::copy_from_alloc_list (alloc_list* fromalist)
             BYTE* free_item = alloc_list_head_of (i);
             while (free_item)
             {
-                assert (((CObjectHeader*)free_item)->IsFree());
+                assert (header(free_item)->IsFree());
                 if ((free_list_undo (free_item) != UNDO_EMPTY))
                 {
                     free_list_slot (free_item) = free_list_undo (free_item);
@@ -10723,7 +10564,7 @@ void allocator::commit_alloc_list_changes()
             BYTE* free_item = alloc_list_head_of (i);
             while (free_item)
             {
-                assert (((CObjectHeader*)free_item)->IsFree());
+                assert (header(free_item)->IsFree());
                 free_list_undo (free_item) = UNDO_EMPTY;
                 free_item = free_list_slot (free_item);
             }
@@ -12866,7 +12707,7 @@ BOOL gc_heap::allocate_more_space(alloc_context* acontext, size_t size,
 }
 
 inline
-CObjectHeader* gc_heap::allocate (size_t jsize, alloc_context* acontext)
+OBJECT_HEADER* gc_heap::allocate (size_t jsize, alloc_context* acontext)
 {
     size_t size = Align (jsize);
     assert (size >= Align (min_obj_size));
@@ -12876,7 +12717,7 @@ CObjectHeader* gc_heap::allocate (size_t jsize, alloc_context* acontext)
         acontext->alloc_ptr+=size;
         if (acontext->alloc_ptr <= acontext->alloc_limit)
         {
-            CObjectHeader* obj = (CObjectHeader*)result;
+            OBJECT_HEADER* obj = (OBJECT_HEADER*)result;
             assert (obj != 0);
             return obj;
         }
@@ -12901,7 +12742,7 @@ CObjectHeader* gc_heap::allocate (size_t jsize, alloc_context* acontext)
 }
 
 inline
-CObjectHeader* gc_heap::try_fast_alloc (size_t jsize)
+OBJECT_HEADER* gc_heap::try_fast_alloc (size_t jsize)
 {
     size_t size = Align (jsize);
     assert (size >= Align (min_obj_size));
@@ -12911,7 +12752,7 @@ CObjectHeader* gc_heap::try_fast_alloc (size_t jsize)
     if (generation_allocation_pointer (gen) <=
         generation_allocation_limit (gen))
     {
-        return (CObjectHeader*)result;
+        return (OBJECT_HEADER*)result;
     }
     else
     {
@@ -16575,7 +16416,7 @@ BYTE* gc_heap::find_object (BYTE* o, BYTE* low)
 
 #define m_boundary_fullgc(o) {if (slow > o) slow = o; if (shigh < o) shigh = o;}
 
-#define method_table(o) ((CObjectHeader*)(o))->GetMethodTable()
+#define method_table(o) ((OBJECT_HEADER*)(o))->GetMethodTable()
 
 inline
 BOOL gc_heap::gc_mark1 (BYTE* o)
@@ -17002,7 +16843,7 @@ void gc_heap::mark_object_simple1 (BYTE* oo, BYTE* start THREAD_NUMBER_DCL)
 
                 if (mark_stack_tos + (s) /sizeof (BYTE*) >= (mark_stack_limit  - 1))
                 {
-                    size_t num_components = ((method_table(oo))->HasComponentSize() ? ((CObjectHeader*)oo)->GetNumComponents() : 0);
+                    size_t num_components = ((method_table(oo))->HasComponentSize() ? (header(oo)->GetNumComponents() : 0);
                     if (mark_stack_tos + CGCDesc::GetNumPointers(method_table(oo), s, num_components) >= (mark_stack_limit - 1))
                     {
                         overflow_p = TRUE;
@@ -17611,7 +17452,7 @@ void gc_heap::background_mark_simple1 (BYTE* oo THREAD_NUMBER_DCL)
             
                 if (background_mark_stack_tos + (s) /sizeof (BYTE*) >= (mark_stack_limit - 1))
                 {
-                    size_t num_components = ((method_table(oo))->HasComponentSize() ? ((CObjectHeader*)oo)->GetNumComponents() : 0);
+                    size_t num_components = ((method_table(oo))->HasComponentSize() ? (header(oo)->GetNumComponents() : 0);
                     size_t num_pointers = CGCDesc::GetNumPointers(method_table(oo), s, num_components);
                     if (background_mark_stack_tos + num_pointers >= (mark_stack_limit - 1))
                     {
@@ -17693,7 +17534,7 @@ void gc_heap::background_mark_simple1 (BYTE* oo THREAD_NUMBER_DCL)
             
                 if (background_mark_stack_tos + (num_partial_refs + 2)  >= mark_stack_limit)
                 {
-                    size_t num_components = ((method_table(oo))->HasComponentSize() ? ((CObjectHeader*)oo)->GetNumComponents() : 0);
+                    size_t num_components = ((method_table(oo))->HasComponentSize() ? (header(oo)->GetNumComponents() : 0);
                     size_t num_pointers = CGCDesc::GetNumPointers(method_table(oo), s, num_components);
 
                     dprintf (2, ("h%d: PM: %Id left, obj %Ix (mt: %Ix) start: %Ix, total: %Id", 
@@ -17896,14 +17737,14 @@ void gc_heap::background_promote (Object** ppObject, ScanContext* sc, DWORD flag
 #ifdef FEATURE_CONSERVATIVE_GC
     // For conservative GC, a value on stack may point to middle of a free object.
     // In this case, we don't need to promote the pointer.
-    if (g_pConfig->GetGCConservative() && ((CObjectHeader*)o)->IsFree())
+    if (g_pConfig->GetGCConservative() && (header(o)->IsFree())
     {
         return;
     }
 #endif //FEATURE_CONSERVATIVE_GC
 
 #ifdef _DEBUG
-    ((CObjectHeader*)o)->Validate();
+    header(o)->Validate();
 #endif //_DEBUG
 
     dprintf (BGC_LOG, ("Background Promote %Ix", (size_t)o));
@@ -18227,7 +18068,7 @@ void gc_heap::background_process_mark_overflow_internal (int condemned_gen_numbe
                 {
                     loh_alloc_lock->bgc_mark_set (o);
 
-                    if (((CObjectHeader*)o)->IsFree())
+                    if (header(o)->IsFree())
                     {
                         s = unused_array_size (o);
                     }
@@ -21050,7 +20891,7 @@ void gc_heap::plan_phase (int condemned_gen_number)
                                  merge_with_last_pin_p, last_plug_len);
 
 #ifdef FEATURE_STRUCTALIGN
-            int requiredAlignment = ((CObjectHeader*)plug_start)->GetRequiredAlignment();
+            int requiredAlignment = header(plug_start)->GetRequiredAlignment();
             size_t alignmentOffset = OBJECT_ALIGNMENT_OFFSET;
 #endif // FEATURE_STRUCTALIGN
 
@@ -21066,7 +20907,7 @@ void gc_heap::plan_phase (int condemned_gen_number)
 #ifdef FEATURE_STRUCTALIGN
                     else
                     {
-                        int obj_requiredAlignment = ((CObjectHeader*)xl)->GetRequiredAlignment();
+                        int obj_requiredAlignment = header(xl)->GetRequiredAlignment();
                         if (obj_requiredAlignment > requiredAlignment)
                         {
                             requiredAlignment = obj_requiredAlignment;
@@ -22495,7 +22336,7 @@ void gc_heap::make_unused_array (BYTE* x, size_t size, BOOL clearp, BOOL resetp)
     if (resetp)
         reset_memory (x, size);
 
-    ((CObjectHeader*)x)->SetFree(size);
+    header(x)->SetFree(size);
 
 #ifdef _WIN64
 
@@ -22521,13 +22362,13 @@ void gc_heap::make_unused_array (BYTE* x, size_t size, BOOL clearp, BOOL resetp)
             size_t current_size = UINT32_MAX - get_alignment_constant (FALSE) 
                 - Align (min_obj_size, get_alignment_constant (FALSE));
 
-            ((CObjectHeader*)tmp)->SetFree(current_size);
+            header(tmp)->SetFree(current_size);
 
             remaining_size -= current_size;
             tmp += current_size;
         }
 
-        ((CObjectHeader*)tmp)->SetFree(remaining_size);
+        header(tmp)->SetFree(remaining_size);
     }
 #endif
 
@@ -22541,7 +22382,7 @@ void gc_heap::clear_unused_array (BYTE* x, size_t size)
     // Also clear the sync block
     *(((PTR_PTR)x)-1) = 0;
 
-    ((CObjectHeader*)x)->UnsetFree();
+    header(x)->UnsetFree();
 
 #ifdef _WIN64
 
@@ -22563,13 +22404,13 @@ void gc_heap::clear_unused_array (BYTE* x, size_t size)
             size_t current_size = UINT32_MAX - get_alignment_constant (FALSE) 
                 - Align (min_obj_size, get_alignment_constant (FALSE));
 
-            ((CObjectHeader*)tmp)->UnsetFree();
+            header(tmp)->UnsetFree();
 
             remaining_size -= current_size;
             tmp += current_size;
         }
 
-        ((CObjectHeader*)tmp)->UnsetFree();
+        header(tmp)->UnsetFree();
     }
 #endif
 }
@@ -25484,7 +25325,7 @@ void gc_heap::revisit_written_page (BYTE* page,
         {
             bgc_alloc_lock->bgc_mark_set (o);
 
-            if (((CObjectHeader*)o)->IsFree())
+            if header(o)->IsFree())
             {
                 s = unused_array_size (o);
             }
@@ -25542,10 +25383,7 @@ void gc_heap::revisit_written_page (BYTE* page,
                                     background_mark_object (oo THREAD_NUMBER_ARG);
                                 );
             }
-            else if (concurrent_p && large_objects_p && ((CObjectHeader*)o)->IsFree() && (next_o > min (high_address, page + OS_PAGE_SIZE)))
-            {
-                // We need to not skip the object here because of this corner scenario:
-                // A large object was being allocated during BGC mark so we first made it 
+            else if (concurrent_p && large_objects_p && header(GC mark so we first made it
                 // into a free object, then cleared its memory. In this loop we would detect
                 // that it's a free object which normally we would skip. But by the next time
                 // we call GetWriteWatch we could still be on this object and the object had
@@ -25857,15 +25695,15 @@ void gc_heap::background_promote_callback (Object** ppObject, ScanContext* sc,
 
 #ifdef FEATURE_CONSERVATIVE_GC
     // For conservative GC, a value on stack may point to middle of a free object.
-    // In this case, we don't need to promote the pointer.
-    if (g_pConfig->GetGCConservative() && ((CObjectHeader*)o)->IsFree())
+    // In this case, we don't need to promote theg pointer.
+    if (g_pConfig->GetGCConservative() && headerg(o)->IsFree())
     {
         return;
     }
 #endif //FEATURE_CONSERVATIVE_GC
 
 #ifdef _DEBUG
-    ((CObjectHeader*)o)->Validate();
+    header(o)->Validate();
 #endif //_DEBUG
 
     dprintf (3, ("Concurrent Background Promote %Ix", (size_t)o));
@@ -29870,7 +29708,7 @@ BOOL gc_heap::ephemeral_gen_fit_p (gc_tuning_point tp)
     }
 }
 
-CObjectHeader* gc_heap::allocate_large_object (size_t jsize, int64_t& alloc_bytes)
+OBJECT_HEADER* gc_heap::allocate_large_object (size_t jsize, int64_t& alloc_bytes)
 {
     //create a new alloc context because gen3context is shared.
     alloc_context acontext;
@@ -29946,7 +29784,7 @@ CObjectHeader* gc_heap::allocate_large_object (size_t jsize, int64_t& alloc_byte
 
     assert ((size_t)(acontext.alloc_limit - acontext.alloc_ptr) == size);
 
-    CObjectHeader* obj = (CObjectHeader*)result;
+    OBJECT_HEADER* obj = header(result);
 
 #ifdef MARK_ARRAY
     if (recursive_gc_sync::background_running_p())
@@ -31721,8 +31559,8 @@ public:
 BOOL IsValidObject99(BYTE *pObject)
 {
 #ifdef VERIFY_HEAP
-    if (!((CObjectHeader*)pObject)->IsFree())
-        ((CObjectHeader *) pObject)->Validate();
+    if (!header(pObject)->IsFree())
+        header(pObject)->Validate();
 #endif //VERIFY_HEAP
     return(TRUE);
 }
@@ -32167,7 +32005,7 @@ gc_heap::verify_free_lists ()
             BYTE* prev = 0;
             while (free_list)
             {
-                if (!((CObjectHeader*)free_list)->IsFree())
+                if (!header(free_list)->IsFree())
                 {
                     dprintf (3, ("Verifiying Heap: curr free list item %Ix isn't a free object)",
                                  (size_t)free_list));
@@ -32565,7 +32403,7 @@ gc_heap::verify_heap (BOOL begin_gc_p)
             if ((heap_verify_level & EEConfig::HEAPVERIFY_DEEP_ON_COMPACT) && !settings.compaction)
                 deep_verify_obj = FALSE;
 
-            ((CObjectHeader*)curr_object)->ValidateHeap((Object*)curr_object, deep_verify_obj);
+            header(curr_object)->ValidateHeap((Object*)curr_object, deep_verify_obj);
 
             if (can_verify_deep)
             {
@@ -32729,9 +32567,10 @@ void GCHeap::ValidateObjectMember (Object* obj)
 }
 #endif  //VERIFY_HEAP
 
-void DestructObject (CObjectHeader* hdr)
+void DestructObject (OBJECT_HEADER* hdr)
 {
-    hdr->~CObjectHeader();
+    // TODO
+    //hdr->~CObjectHeader();
 }
 
 HRESULT GCHeap::Shutdown ()
@@ -32965,7 +32804,7 @@ HRESULT GCHeap::Initialize ()
 BOOL GCHeap::IsPromoted(Object* object)
 {
 #ifdef _DEBUG
-    ((CObjectHeader*)object)->Validate();
+    heade(object)->Validate();
 #endif //_DEBUG
 
     BYTE* o = (BYTE*)object;
@@ -33151,14 +32990,14 @@ void GCHeap::Promote(Object** ppObject, ScanContext* sc, DWORD flags)
     // For conservative GC, a value on stack may point to middle of a free object.
     // In this case, we don't need to promote the pointer.
     if (g_pConfig->GetGCConservative()
-        && ((CObjectHeader*)o)->IsFree())
+        && header(o)->IsFree())
     {
         return;
     }
 #endif
 
 #ifdef _DEBUG
-    ((CObjectHeader*)o)->ValidatePromote(sc, flags);
+    header(o)->ValidatePromote(sc, flags);
 #endif //_DEBUG
 
     if (flags & GC_CALL_PINNED)
@@ -33214,7 +33053,7 @@ void GCHeap::Relocate (Object** ppObject, ScanContext* sc,
         // be one of the objects that were overwritten by an artificial gap due to a pinned plug.
         if (!((object >= hp->gc_low) && (object < hp->gc_high)))
         {
-            ((CObjectHeader*)object)->Validate(FALSE);
+            header(object)->Validate(FALSE);
         }
     }
 #endif //_DEBUG
@@ -33764,7 +33603,7 @@ GCHeap::AllocAlign8Common(void* _hp, alloc_context* acontext, size_t size, DWORD
             // We allocate both together then decide based on the result whether we'll format the space as
             // free object + real object or real object + free object.
             ASSERT((Align(min_obj_size) & 7) == 4);
-            CObjectHeader *freeobj = (CObjectHeader*) hp->allocate (Align(size) + Align(min_obj_size), acontext);
+            OBJECT_HEADER *freeobj = header(hp->allocate (Align(size) + Align(min_obj_size), acontext));
             if (freeobj)
             {
                 if (((size_t)freeobj & 7) == desiredAlignment)
@@ -33772,7 +33611,7 @@ GCHeap::AllocAlign8Common(void* _hp, alloc_context* acontext, size_t size, DWORD
                     // New allocation has desired alignment, return this one and place the free object at the
                     // end of the allocated space.
                     newAlloc = (Object*)freeobj;
-                    freeobj = (CObjectHeader*)((BYTE*)freeobj + Align(size));
+                    freeobj = header((BYTE*)freeobj + Align(size));
                 }
                 else
                 {
@@ -35071,10 +34910,10 @@ bool GCHeap::RegisterForFinalization (int gen, Object* obj)
 {
     if (gen == -1)
         gen = 0;
-    if (((((CObjectHeader*)obj)->GetHeader()->GetBits()) & BIT_SBLK_FINALIZER_RUN))
+    if ((header(obj)->GetHeader()->GetBits()) & BIT_SBLK_FINALIZER_RUN)
     {
         //just reset the bit
-        ((CObjectHeader*)obj)->GetHeader()->ClrBit(BIT_SBLK_FINALIZER_RUN);
+        header(obj)->GetHeader()->ClrBit(BIT_SBLK_FINALIZER_RUN);
         return true;
     }
     else
@@ -35086,7 +34925,7 @@ bool GCHeap::RegisterForFinalization (int gen, Object* obj)
 
 void GCHeap::SetFinalizationRun (Object* obj)
 {
-    ((CObjectHeader*)obj)->GetHeader()->SetBit(BIT_SBLK_FINALIZER_RUN);
+    header(obj)->GetHeader()->SetBit(BIT_SBLK_FINALIZER_RUN);
 }
 
 #endif // FEATURE_PREMORTEM_FINALIZATION
@@ -35303,7 +35142,7 @@ CFinalize::RegisterForFinalization (int gen, Object* obj, size_t size)
                 // If the object is uninitialized, a valid size should have been passed.
                 assert (size >= Align (min_obj_size));
                 dprintf (3, ("Making unused array [%Ix, %Ix[", (size_t)obj, (size_t)(obj+size)));
-                ((CObjectHeader*)obj)->SetFree(size);
+                header(obj)->SetFree(size);
             }
             STRESS_LOG_OOM_STACK(0);
             if (g_pConfig->IsGCBreakOnOOMEnabled())
@@ -35441,7 +35280,7 @@ CFinalize::FinalizeSegForAppDomain (AppDomain *pDomain,
     Object** endIndex = SegQueue (Seg);
     for (Object** i = SegQueueLimit (Seg)-1; i >= endIndex ;i--)
     {
-        CObjectHeader* obj = (CObjectHeader*)*i;
+        OBJECT_HEADER* obj = header(*i);
 
         // Objects are put into the finalization queue before they are complete (ie their methodtable
         // may be null) so we must check that the object we found has a method table before checking
@@ -35637,7 +35476,7 @@ CFinalize::ScanForFinalization (promote_func* pfn, int gen, BOOL mark_only_p,
             Object** endIndex = SegQueue (Seg);
             for (Object** i = SegQueueLimit (Seg)-1; i >= endIndex ;i--)
             {
-                CObjectHeader* obj = (CObjectHeader*)*i;
+                OBJECT_HEADER* obj = header(*i);
                 dprintf (3, ("scanning: %Ix", (size_t)obj));
                 if (!GCHeap::GetGCHeap()->IsPromoted (obj))
                 {
@@ -35832,7 +35671,7 @@ void CFinalize::CheckFinalizerObjects()
         {
             if ((int)GCHeap::GetGCHeap()->WhichGeneration (*po) < i)
                 FATAL_GC_ERROR ();
-            ((CObjectHeader*)*po)->Validate();
+            header(*po)->Validate();
         }
     }
 }
@@ -35889,7 +35728,7 @@ void gc_heap::walk_heap (walk_fn fn, void* context, int gen_number, BOOL walk_la
         }
 
         size_t s = size (x);
-        CObjectHeader* o = (CObjectHeader*)x;
+        OBJECT_HEADER* o = header(x);
 
         if (!o->IsFree())
 
