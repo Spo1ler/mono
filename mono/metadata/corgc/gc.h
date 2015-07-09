@@ -23,6 +23,9 @@ Module Name:
 
 #endif
 
+/* forward declerations */
+class Object;
+
 /*
  * Promotion Function Prototypes
  */
@@ -97,9 +100,6 @@ struct oom_history
     size_t available_pagefile_mb;
     BOOL loh_p;
 };
-
-/* forward declerations */
-class Object;
 
 class GCHeap;
 

@@ -3556,7 +3556,7 @@ void gset_card (size_t card);
 #define memref(i) *(BYTE**)(i)
 
 //GC Flags
-#define GC_MARKED       (size_t)0x1
+//#define GC_MARKED       (size_t)0x1
 #define slot(i, j) ((BYTE**)(i))[j+1]
 
 #define free_object_base_size (plug_skew + sizeof(ArrayBase))
@@ -34910,10 +34910,10 @@ bool GCHeap::RegisterForFinalization (int gen, Object* obj)
 {
     if (gen == -1)
         gen = 0;
-    if ((header(obj)->GetHeader()->GetBits()) & BIT_SBLK_FINALIZER_RUN)
+    if ((header(obj)->GetBits()) & BIT_FINALIZER_RUN)
     {
         //just reset the bit
-        header(obj)->GetHeader()->ClrBit(BIT_SBLK_FINALIZER_RUN);
+        header(obj)->ClrBit(BIT_FINALIZER_RUN);
         return true;
     }
     else
@@ -34925,7 +34925,7 @@ bool GCHeap::RegisterForFinalization (int gen, Object* obj)
 
 void GCHeap::SetFinalizationRun (Object* obj)
 {
-    header(obj)->GetHeader()->SetBit(BIT_SBLK_FINALIZER_RUN);
+    header(obj)->SetBit(BIT_FINALIZER_RUN);
 }
 
 #endif // FEATURE_PREMORTEM_FINALIZATION

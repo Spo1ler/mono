@@ -243,7 +243,9 @@ corgc_sources = \
 	corgc/objecthandle.cpp	\
 	corgc/glue.cpp	\
 	corgc/corgc-gc.c	\
-	corgc/corgc-gc.h
+	corgc/corgc-gc.h	\
+	corgc/wrapper.cpp	\
+	corgc/wrapper.h
 
 sgen_sources = \
 	sgen-os-posix.c		\

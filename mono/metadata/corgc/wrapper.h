@@ -3,6 +3,11 @@
 
 #include <mono/metadata/object.h>
 
+#define BITS_MASK 0xffff
+#define BIT_MARKED 0x1
+#define BIT_PINNED 0x2
+#define BIT_FINALIZER_RUN 0x4
+
 class CGDesc;
 struct ScanContext;
 

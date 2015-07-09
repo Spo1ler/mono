@@ -59,36 +59,34 @@ ADIndex GCMonoObjectWrapper::GetAppDomainIndex()
 
 MonoVTable* GCMonoObjectWrapper::GetMethodTable() const
 {
-        return (MonoVTable*) (((size_t) RawGetMethodTable()) & (~(GC_MARKED)));
+        return (MonoVTable*) (((size_t) RawGetMethodTable()) & (~(BIT_MARKED)));
 }
 
 void GCMonoObjectWrapper::SetMarked()
 {
-        RawSetMethodTable((MethodTable*)((size_t) RawGetMethodTable()) | GC_MARKED);
+        SetBit(BIT_MARKED);
 }
 
 BOOL GCMonoObjectWrapper::IsMarked() const
 {
-        return !!(((size_t)RawGetMethodTable()) & GC_MARKED);
+        return GetBits() & BIT_MARKED == BIT_MARKED;
 }
 
 void GCMonoObjectWrapper::SetPinned()
 {
-        // TODO
+        // TODO interlocked
+        SetBit(BIT_PINNED);
         return;
-        /*assert(!(gc_heap::settings.concurrent));
-          GetHeader()->SetGCBit();*/
 }
 
 BOOL GCMonoObjectWrapper::IsPinned() const
 {
-        // TODO
-        return FALSE;
+        return GetBits() & BIT _PINNED == BIT_PINNED;
 }
 
 void GCMonoObjectWrapper::ClearMarked()
 {
-        RawSetMethodTable(GetMethodTable());
+        ClearBit(BIT_MARKED);
 }
 
 CGCDesc* GCMonoObjectWrapper::GetSlotMap()
@@ -117,8 +115,6 @@ BOOL GCMonoObjectWrapper::IsFree() const
         return FALSE;
 }
 
-#ifdef FEATURE_STRUCTALIGN
-
 int GCMonoObjectWrapper::GetRequiredAlignment() const
 {
         return (int)vtable->klass->min_align;
@@ -136,18 +132,19 @@ BOOL GCMonoObjectWrapper::Collectible() const
 
 void GCMonoObjectWrapper::SetBit(DWORD bit)
 {
-        // TODO
+        assert(bit & BITS_MASK == bit);
+
+        RawSetMethodTable(RawGetMethodTable() | bit);
 }
 
 DWORD GCMonoObjectWrapper::GetBits()
 {
-        // TODO
-        return 0;
+        return RawGetMethodTable() & BITS_MASK;
 }
 
 void GCMonoObjectWrapper::ClrBit(DWORD bit)
 {
-        // TODO
-}
+        assert(bit & BITS_MASK == bit);
 
-#endif // FEATURE_STRUCTALIGN
+        RawSetMethodTable(RawGetMethodTable() & ~bit);
+}

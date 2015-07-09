@@ -22,9 +22,10 @@
 
 class GCMonoObjectWrapper;
 
-typedef OBJECT_HEADER GCMonoObjectWrapper;
-
 #include "gc.h"
+
+typedef GCMonoObjectWrapper OBJECT_HEADER;
+typedef GCMonoObjectWrapper Object;
 
 //#define DT_LOG
 
