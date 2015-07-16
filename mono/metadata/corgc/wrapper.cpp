@@ -59,7 +59,7 @@ ADIndex GCMonoObjectWrapper::GetAppDomainIndex()
 
 MonoVTable* GCMonoObjectWrapper::GetMethodTable() const
 {
-        return (MonoVTable*) (((size_t) RawGetMethodTable()) & (~(BIT_MARKED)));
+        return (MonoVTable*) (((size_t) RawGetMethodTable()) & (~(BIT_MASK)));
 }
 
 void GCMonoObjectWrapper::SetMarked()
@@ -69,7 +69,7 @@ void GCMonoObjectWrapper::SetMarked()
 
 BOOL GCMonoObjectWrapper::IsMarked() const
 {
-        return GetBits() & BIT_MARKED == BIT_MARKED;
+        return (GetBits() & BIT_MARKED) == BIT_MARKED;
 }
 
 void GCMonoObjectWrapper::SetPinned()
@@ -81,7 +81,7 @@ void GCMonoObjectWrapper::SetPinned()
 
 BOOL GCMonoObjectWrapper::IsPinned() const
 {
-        return GetBits() & BIT _PINNED == BIT_PINNED;
+        return ()GetBits() & BIT _PINNED) == BIT_PINNED;
 }
 
 void GCMonoObjectWrapper::ClearMarked()
@@ -132,7 +132,7 @@ BOOL GCMonoObjectWrapper::Collectible() const
 
 void GCMonoObjectWrapper::SetBit(DWORD bit)
 {
-        assert(bit & BITS_MASK == bit);
+        assert((bit & BITS_MASK) == bit);
 
         RawSetMethodTable(RawGetMethodTable() | bit);
 }
@@ -144,7 +144,7 @@ DWORD GCMonoObjectWrapper::GetBits()
 
 void GCMonoObjectWrapper::ClrBit(DWORD bit)
 {
-        assert(bit & BITS_MASK == bit);
+        assert((bit & BITS_MASK) == bit);
 
         RawSetMethodTable(RawGetMethodTable() & ~bit);
 }
