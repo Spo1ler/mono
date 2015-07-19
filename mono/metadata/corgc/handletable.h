@@ -15,6 +15,11 @@
 #ifndef _HANDLETABLE_H
 #define _HANDLETABLE_H
 
+#if defined(TARGET_X86)
+#define CALLBACK __stdcall
+#else
+#define CALLBACK
+#endif
 
 /****************************************************************************
  *

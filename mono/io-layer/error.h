@@ -10,6 +10,8 @@
 #ifndef _WAPI_ERROR_H_
 #define _WAPI_ERROR_H_
 
+#define NOERROR NO_ERROR
+
 typedef enum {
 	ERROR_SUCCESS = 0,
 	NO_ERROR = 0,

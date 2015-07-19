@@ -2,6 +2,7 @@
 #define CORGC_WRAPPER_H_
 
 #include <mono/metadata/object.h>
+#include <mono/metadata/object-internals.h>
 #include <mono/metadata/class-internals.h>
 
 #define BITS_MASK 0xffff

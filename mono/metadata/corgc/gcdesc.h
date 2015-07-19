@@ -68,8 +68,11 @@ struct val_array_series
     size_t          m_count;
 };
 
-typedef DPTR(class CGCDescSeries) PTR_CGCDescSeries;
-typedef DPTR(class MethodTable) PTR_MethodTable;
+class CGCDescSeries;
+
+typedef DPTR(CGCDescSeries) PTR_CGCDescSeries;
+typedef DPTR(MethodTable) PTR_MethodTable;
+
 class CGCDescSeries
 {
 public:

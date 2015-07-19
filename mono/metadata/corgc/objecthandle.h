@@ -655,7 +655,7 @@ struct ProfilingScanContext;
 void Ref_BeginSynchronousGC   (UINT uCondemnedGeneration, UINT uMaxGeneration);
 void Ref_EndSynchronousGC     (UINT uCondemnedGeneration, UINT uMaxGeneration);
 
-typedef void Ref_promote_func(class Object**, ScanContext*, DWORD);
+typedef void Ref_promote_func(Object**, ScanContext*, DWORD);
 
 void Ref_TraceRefCountHandles(HANDLESCANPROC callback, LPARAM lParam1, LPARAM lParam2);
 void Ref_TracePinningRoots(UINT condemned, UINT maxgen, ScanContext* sc, Ref_promote_func* fn);

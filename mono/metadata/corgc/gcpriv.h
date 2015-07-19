@@ -12,7 +12,6 @@
 #endif
 
 #ifdef __GNUC__
-
 #define inline __attribute__((always_inline)) inline
 #elif defined(_MSC_VER)
 #define inline __forceinline
@@ -20,10 +19,15 @@
 #define inline
 #endif
 
-class GCMonoObjectWrapper;
+#ifdef __GNUC__
+#define DebugBreak __builtin_trap
+#endif
+
+#define OBJECT_HEADER GCMonoObjectWrapper
 
 #include "gc.h"
 #include "gcrecord.h"
+#include "wrapper.h"
 
 static inline void FATAL_GC_ERROR()
 {
@@ -4024,8 +4028,10 @@ size_t generation_unusable_fragmentation (generation* inst)
                     (1.0f-generation_allocator_efficiency(inst))*generation_free_list_space (inst));
 }
 
-#define plug_skew           sizeof(ObjHeader)
-#define min_obj_size        (sizeof(BYTE*)+plug_skew+sizeof(size_t))//syncblock + vtable+ first field
+// TODO Figure out the right values for mono implementation
+
+#define plug_skew           sizeof(GCMonoObjectWrapper)
+#define min_obj_size        (plug_skew+sizeof(size_t))
 #define min_free_list       (sizeof(BYTE*)+min_obj_size) //Need one slot more
 //Note that this encodes the fact that plug_skew is a multiple of BYTE*.
 struct plug

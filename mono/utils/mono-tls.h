@@ -46,10 +46,12 @@ typedef enum {
 #define MonoNativeTlsKey pthread_key_t
 #define mono_native_tls_get_value pthread_getspecific
 
+typedef void (*destructor_callback)(void*);
+
 static inline int
 mono_native_tls_alloc (MonoNativeTlsKey *key, void *destructor)
 {
-	return pthread_key_create (key, destructor) == 0;
+	return pthread_key_create (key, (destructor_callback)destructor) == 0;
 }
 
 static inline void

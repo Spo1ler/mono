@@ -11,6 +11,12 @@
 #define FEATURE_CONSERVATIVE_GC 1
 // #define _DEBUG
 
+#if defined(TARGET_X86)
+#define CALLBACK __stdcall
+#else
+#define CALLBACK
+#endif
+
 #include <mono/metadata/class-internals.h>
 
 class GCMonoObjectWrapper;
@@ -72,7 +78,7 @@ typedef wchar_t * PWSTR, *LPWSTR;
 typedef const wchar_t *LPCWSTR, *PCWSTR;
 typedef size_t SIZE_T;
 /* typedef ptrdiff_t ssize_t; */
-/* typedef ptrdiff_t SSIZE_T; */
+typedef ptrdiff_t SSIZE_T;
 
 typedef void * HANDLE;
 
@@ -283,10 +289,12 @@ typedef DWORD (*PTHREAD_START_ROUTINE)(void* lpThreadParameter);
 /* FlushFileBuffers( */
 /*          HANDLE hFile); */
 
-/* extern "C" VOID */
-/* _mm_pause (); */
+extern "C" VOID
+_mm_pause ();
 
+#ifdef _MSC_VER
 #pragma intrinsic(_mm_pause)
+#endif
 
 #define YieldProcessor _mm_pause
 
@@ -478,33 +486,6 @@ bool __SwitchToThread (uint32_t dwSleepMSec, uint32_t dwSwitchCount);
 // Low-level types describing GC object layouts.
 //
 
-// Bits stolen from the sync block index that the GC/HandleTable knows about (currently these are at the same
-// positions as the mainline runtime but we can change this below when it becomes apparent how Redhawk will
-// handle sync blocks).
-#define BIT_SBLK_GC_RESERVE                 0x20000000
-#define BIT_SBLK_FINALIZER_RUN              0x40000000
-
-// The sync block index header (small structure that immediately precedes every object in the GC heap). Only
-// the GC uses this so far, and only to store a couple of bits of information.
-class ObjHeader
-{
-private:
-#if defined(_WIN64)
-    uint32_t m_uAlignpad;
-#endif // _WIN64
-    uint32_t m_uSyncBlockValue;
-
-public:
-    uint32_t GetBits() { return m_uSyncBlockValue; }
-    void SetBit(uint32_t uBit) { FastInterlockOr(&m_uSyncBlockValue, uBit); }
-    void ClrBit(uint32_t uBit) { FastInterlockAnd(&m_uSyncBlockValue, ~uBit); }
-    void SetGCBit() { m_uSyncBlockValue |= BIT_SBLK_GC_RESERVE; }
-    void ClrGCBit() { m_uSyncBlockValue &= ~BIT_SBLK_GC_RESERVE; }
-};
-
-#define MTFlag_ContainsPointers 1
-#define MTFlag_HasFinalizer 2
-
 // Various types used to refer to object references or handles. This will get more complex if we decide
 // Redhawk wants to wrap object references in the debug build.
 typedef DPTR(Object) PTR_Object;
@@ -677,7 +658,7 @@ public:
 struct ScanContext;
 typedef void promote_func(PTR_PTR_Object, ScanContext*, unsigned);
 
-typedef void (*HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, LPARAM *pExtraInfo, LPARAM param1, LPARAM param2);
+typedef void (CALLBACK *HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, LPARAM *pExtraInfo, LPARAM param1, LPARAM param2);
 
 class GCToEEInterface
 {
@@ -945,7 +926,9 @@ public:
 
         case Config_COUNT:
         default:
+#ifdef _MSC_VER
 #pragma warning(suppress:4127) // Constant conditional expression in ASSERT below
+#endif
             ASSERT(!"Unknown config value type");
             return 0;
         }
