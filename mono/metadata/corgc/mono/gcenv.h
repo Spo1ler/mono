@@ -11,6 +11,20 @@
 #define FEATURE_CONSERVATIVE_GC 1
 // #define _DEBUG
 
+#include <mono/metadata/class-internals.h>
+
+class GCMonoObjectWrapper;
+class GCMonoVTableWrapper;
+
+typedef GCMonoObjectWrapper Object;
+typedef GCMonoVTableWrapper MethodTable;
+
+#ifdef _MSC_VER
+#define FORCEINLINE __forceinline
+#else
+#define FORCEINLINE __attribute__((always_inline))
+#endif
+
 #ifndef _INC_WINDOWS
 
 // -----------------------------------------------------------------------------------------------------------
@@ -18,15 +32,15 @@
 // Aliases for Win32 types
 //
 
-typedef uint32_t BOOL;
-typedef uint16_t WORD;
-typedef uint16_t USHORT;
-typedef uint32_t DWORD;
-typedef uintptr_t DWORD_PTR;
+/* typedef uint32_t BOOL; */
+/* typedef uint16_t WORD; */
+/* typedef uint16_t USHORT; */
+/* typedef uint32_t DWORD; */
+/* typedef uintptr_t DWORD_PTR; */
 typedef uint8_t BYTE;
 typedef int8_t SBYTE;
-typedef BYTE* PBYTE;
-typedef void* LPVOID;
+/* typedef BYTE* PBYTE; */
+/* typedef void* LPVOID; */
 typedef int8_t INT8;
 typedef uint32_t UINT;
 typedef uint32_t UINT32;
@@ -34,8 +48,8 @@ typedef uint16_t UINT16;
 typedef uint8_t UINT8;
 typedef int16_t INT16;
 typedef int32_t INT32;
-typedef int32_t LONG;
-typedef int64_t LONGLONG;
+/* typedef int32_t LONG; */
+/* typedef int64_t LONGLONG; */
 typedef uint32_t ULONG;
 typedef uint32_t ULONG32;
 typedef intptr_t INT_PTR;
@@ -46,37 +60,37 @@ typedef uint64_t ULONG64;
 typedef uint64_t ULONGLONG;
 typedef uint64_t DWORDLONG;
 typedef int64_t INT64;
-typedef void VOID;
+/* typedef void VOID; */
 typedef void* PVOID;
 typedef uintptr_t LPARAM;
-typedef void* LPCGUID;
-typedef void * LPSECURITY_ATTRIBUTES;
+/* typedef void* LPCGUID; */
+/* typedef void * LPSECURITY_ATTRIBUTES; */
 typedef void const * LPCVOID;
 typedef uint32_t * PULONG;
 typedef char * PSTR;
 typedef wchar_t * PWSTR, *LPWSTR;
 typedef const wchar_t *LPCWSTR, *PCWSTR;
 typedef size_t SIZE_T;
-typedef ptrdiff_t ssize_t;
-typedef ptrdiff_t SSIZE_T;
+/* typedef ptrdiff_t ssize_t; */
+/* typedef ptrdiff_t SSIZE_T; */
 
 typedef void * HANDLE;
 
-typedef union _LARGE_INTEGER {
-    struct {
-#if BIGENDIAN
-        LONG HighPart;
-        DWORD LowPart;
-#else
-        DWORD LowPart;
-        LONG HighPart;
-#endif
-    } u;
-    LONGLONG QuadPart;
-} LARGE_INTEGER, *PLARGE_INTEGER;
+/* typedef union _LARGE_INTEGER { */
+/*     struct { */
+/* #if BIGENDIAN */
+/*         LONG HighPart; */
+/*         DWORD LowPart; */
+/* #else */
+/*         DWORD LowPart; */
+/*         LONG HighPart; */
+/* #endif */
+/*     } u; */
+/*     LONGLONG QuadPart; */
+/* } LARGE_INTEGER, *PLARGE_INTEGER; */
 
-#define SIZE_T_MAX ((size_t)-1)
-#define SSIZE_T_MAX ((ssize_t)(SIZE_T_MAX / 2))
+/* #define SIZE_T_MAX ((size_t)-1) */
+/* #define SSIZE_T_MAX ((ssize_t)(SIZE_T_MAX / 2)) */
 
 // -----------------------------------------------------------------------------------------------------------
 // HRESULT subset.
@@ -86,29 +100,29 @@ typedef int32_t HRESULT;
 #define SUCCEEDED(_hr)          ((HRESULT)(_hr) >= 0)
 #define FAILED(_hr)             ((HRESULT)(_hr) < 0)
 
-inline HRESULT HRESULT_FROM_WIN32(unsigned long x)
-{
-    return (HRESULT)(x) <= 0 ? (HRESULT)(x) : (HRESULT) (((x) & 0x0000FFFF) | (7 << 16) | 0x80000000);
-}
+/* inline HRESULT HRESULT_FROM_WIN32(unsigned long x) */
+/* { */
+/*     return (HRESULT)(x) <= 0 ? (HRESULT)(x) : (HRESULT) (((x) & 0x0000FFFF) | (7 << 16) | 0x80000000); */
+/* } */
 
-#define S_OK                    0x0
-#define S_FALSE                 0x1
-#define E_FAIL                  0x80004005
-#define E_OUTOFMEMORY           0x8007000E
-#define E_UNEXPECTED            0x8000FFFF
-#define E_NOTIMPL               0x80004001
-#define E_INVALIDARG            0x80070057
+/* #define S_OK                    0x0 */
+/* #define S_FALSE                 0x1 */
+/* #define E_FAIL                  0x80004005 */
+/* #define E_OUTOFMEMORY           0x8007000E */
+/* #define E_UNEXPECTED            0x8000FFFF */
+/* #define E_NOTIMPL               0x80004001 */
+/* #define E_INVALIDARG            0x80070057 */
 
-#define NOERROR                 0x0
-#define ERROR_TIMEOUT             1460
+/* #define NOERROR                 0x0 */
+/* #define ERROR_TIMEOUT             1460 */
 
-#define TRUE true
-#define FALSE false
+/* #define TRUE true */
+/* #define FALSE false */
 
-#define CALLBACK
-#define FORCEINLINE inline
+/* #define CALLBACK */
+/* #define FORCEINLINE inline */
 
-#define INFINITE 0xFFFFFFFF
+/* #define INFINITE 0xFFFFFFFF */
 
 #define ZeroMemory(Destination,Length) memset((Destination),0,(Length))
 
@@ -126,7 +140,7 @@ inline HRESULT HRESULT_FROM_WIN32(unsigned long x)
 
 #define C_ASSERT(cond) static_assert( cond, #cond )
 
-#define INVALID_HANDLE_VALUE    ((HANDLE)-1)
+/* #define INVALID_HANDLE_VALUE    ((HANDLE)-1) */
 
 #pragma pack(push, 8)
 
@@ -164,113 +178,113 @@ typedef DWORD (*PTHREAD_START_ROUTINE)(void* lpThreadParameter);
 #define WINBASEAPI extern "C"
 #define WINAPI 
 
-WINBASEAPI
-void 
-WINAPI
-DebugBreak();
+/* WINBASEAPI */
+/* void  */
+/* WINAPI */
+/* DebugBreak(); */
 
-WINBASEAPI
-BOOL
-WINAPI
-VirtualUnlock(
-    LPVOID lpAddress,
-    SIZE_T dwSize
-    );
+/* WINBASEAPI */
+/* BOOL */
+/* WINAPI */
+/* VirtualUnlock( */
+/*     LPVOID lpAddress, */
+/*     SIZE_T dwSize */
+/*     ); */
 
-WINBASEAPI
-DWORD
-WINAPI
-GetLastError();
+/* WINBASEAPI */
+/* DWORD */
+/* WINAPI */
+/* GetLastError(); */
 
-WINBASEAPI
-UINT 
-WINAPI
-GetWriteWatch(
-  DWORD dwFlags,
-  PVOID lpBaseAddress,
-  SIZE_T dwRegionSize,
-  PVOID *lpAddresses,
-  ULONG_PTR * lpdwCount,
-  ULONG * lpdwGranularity
-);
+/* WINBASEAPI */
+/* UINT  */
+/* WINAPI */
+/* GetWriteWatch( */
+/*   DWORD dwFlags, */
+/*   PVOID lpBaseAddress, */
+/*   SIZE_T dwRegionSize, */
+/*   PVOID *lpAddresses, */
+/*   ULONG_PTR * lpdwCount, */
+/*   ULONG * lpdwGranularity */
+/* ); */
 
-WINBASEAPI
-UINT 
-WINAPI
-ResetWriteWatch(
-  LPVOID lpBaseAddress,
-  SIZE_T dwRegionSize
-);
+/* WINBASEAPI */
+/* UINT  */
+/* WINAPI */
+/* ResetWriteWatch( */
+/*   LPVOID lpBaseAddress, */
+/*   SIZE_T dwRegionSize */
+/* ); */
 
-WINBASEAPI
-VOID 
-WINAPI
-FlushProcessWriteBuffers();
+/* WINBASEAPI */
+/* VOID  */
+/* WINAPI */
+/* FlushProcessWriteBuffers(); */
 
-WINBASEAPI
-DWORD
-WINAPI
-GetTickCount();
+/* WINBASEAPI */
+/* DWORD */
+/* WINAPI */
+/* GetTickCount(); */
 
-WINBASEAPI
-BOOL
-WINAPI
-QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);
+/* WINBASEAPI */
+/* BOOL */
+/* WINAPI */
+/* QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount); */
 
-WINBASEAPI
-BOOL
-WINAPI
-QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency);
+/* WINBASEAPI */
+/* BOOL */
+/* WINAPI */
+/* QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency); */
 
-WINBASEAPI
-DWORD
-WINAPI
-GetCurrentThreadId();
+/* WINBASEAPI */
+/* DWORD */
+/* WINAPI */
+/* GetCurrentThreadId(); */
 
-WINBASEAPI
-BOOL
-WINAPI
-CloseHandle(
-        HANDLE hObject);
+/* WINBASEAPI */
+/* BOOL */
+/* WINAPI */
+/* CloseHandle( */
+/*         HANDLE hObject); */
 
-#define WAIT_OBJECT_0           0
-#define WAIT_TIMEOUT            258
-#define WAIT_FAILED             0xFFFFFFFF
+/* #define WAIT_OBJECT_0           0 */
+/* #define WAIT_TIMEOUT            258 */
+/* #define WAIT_FAILED             0xFFFFFFFF */
 
-#define GENERIC_WRITE           0x40000000
-#define FILE_SHARE_READ         0x00000001
-#define CREATE_ALWAYS           2
-#define FILE_ATTRIBUTE_NORMAL               0x00000080
+/* #define GENERIC_WRITE           0x40000000 */
+/* #define FILE_SHARE_READ         0x00000001 */
+/* #define CREATE_ALWAYS           2 */
+/* #define FILE_ATTRIBUTE_NORMAL               0x00000080 */
 
-WINBASEAPI
-BOOL
-WINAPI
-WriteFile(
-      HANDLE hFile,
-      LPCVOID lpBuffer,
-      DWORD nNumberOfBytesToWrite,
-      DWORD * lpNumberOfBytesWritten,
-      PVOID lpOverlapped);
+/* WINBASEAPI */
+/* BOOL */
+/* WINAPI */
+/* WriteFile( */
+/*       HANDLE hFile, */
+/*       LPCVOID lpBuffer, */
+/*       DWORD nNumberOfBytesToWrite, */
+/*       DWORD * lpNumberOfBytesWritten, */
+/*       PVOID lpOverlapped); */
 
-#define FILE_BEGIN              0
+/* #define FILE_BEGIN              0 */
 
-WINBASEAPI
-DWORD
-WINAPI
-SetFilePointer(
-           HANDLE hFile,
-           LONG lDistanceToMove,
-           LONG * lpDistanceToMoveHigh,
-           DWORD dwMoveMethod);
+/* WINBASEAPI */
+/* DWORD */
+/* WINAPI */
+/* SetFilePointer( */
+/*            HANDLE hFile, */
+/*            LONG lDistanceToMove, */
+/*            LONG * lpDistanceToMoveHigh, */
+/*            DWORD dwMoveMethod); */
 
-WINBASEAPI
-BOOL
-WINAPI
-FlushFileBuffers(
-         HANDLE hFile);
+/* WINBASEAPI */
+/* BOOL */
+/* WINAPI */
+/* FlushFileBuffers( */
+/*          HANDLE hFile); */
 
-extern "C" VOID
-_mm_pause ();
+/* extern "C" VOID */
+/* _mm_pause (); */
 
 #pragma intrinsic(_mm_pause)
 
@@ -491,106 +505,6 @@ public:
 #define MTFlag_ContainsPointers 1
 #define MTFlag_HasFinalizer 2
 
-class MethodTable
-{
-public:
-    uint32_t    m_baseSize;
-    uint16_t    m_componentSize;
-    uint16_t    m_flags;
-
-public:
-    void InitializeFreeObject()
-    {
-        m_baseSize = 3 * sizeof(void *);
-        m_componentSize = 1;
-        m_flags = 0;
-    }
-
-    uint32_t GetBaseSize()
-    {
-        return m_baseSize;
-    }
-
-    uint16_t RawGetComponentSize()
-    {
-        return m_componentSize;
-    }
-
-    bool ContainsPointers()
-    {
-        return (m_flags & MTFlag_ContainsPointers) != 0;
-    }
-
-    bool ContainsPointersOrCollectible()
-    {
-        return ContainsPointers();
-    }
-
-    bool HasComponentSize()
-    {
-        return m_componentSize != 0;
-    }
-
-    bool HasFinalizer()
-    {
-        return (m_flags & MTFlag_HasFinalizer) != 0;
-    }
-
-    bool HasCriticalFinalizer()
-    {
-        return false;
-    }
-
-    bool SanityCheck()
-    {
-        return true;
-    }
-};
-#define EEType MethodTable
-
-class Object
-{
-    MethodTable * m_pMethTab;
-
-public:
-    ObjHeader * GetHeader()
-    { 
-        return ((ObjHeader *)this) - 1;
-    }
-
-    MethodTable * RawGetMethodTable() const
-    {
-        return m_pMethTab;
-    }
-
-    void RawSetMethodTable(MethodTable * pMT)
-    {
-        m_pMethTab = pMT;
-    }
-
-    void SetMethodTable(MethodTable * pMT)
-    {
-        m_pMethTab = pMT;
-    }
-};
-#define MIN_OBJECT_SIZE     (2*sizeof(BYTE*) + sizeof(ObjHeader))
-
-class ArrayBase : public Object
-{
-    DWORD m_dwLength;
-
-public:
-    DWORD GetNumComponents()
-    {
-        return m_dwLength;
-    }
-
-    static SIZE_T GetOffsetOfNumComponents()
-    {
-        return offsetof(ArrayBase, m_dwLength);
-    }
-};
-
 // Various types used to refer to object references or handles. This will get more complex if we decide
 // Redhawk wants to wrap object references in the debug build.
 typedef DPTR(Object) PTR_Object;
@@ -600,16 +514,7 @@ typedef PTR_Object OBJECTREF;
 typedef PTR_PTR_Object PTR_OBJECTREF;
 typedef PTR_Object _UNCHECKED_OBJECTREF;
 typedef PTR_PTR_Object PTR_UNCHECKED_OBJECTREF;
-
-#ifndef DACCESS_COMPILE
-struct OBJECTHANDLE__
-{
-    void* unused;
-};
-typedef struct OBJECTHANDLE__* OBJECTHANDLE;
-#else
 typedef TADDR OBJECTHANDLE;
-#endif
 
 // With no object reference wrapping the following macros are very simple.
 #define ObjectToOBJECTREF(_obj) (OBJECTREF)(_obj)
@@ -665,8 +570,6 @@ void InitializeSystemInfo();
 void
 GetProcessMemoryLoad(
             LPMEMORYSTATUSEX lpBuffer);
-
-extern MethodTable * g_pFreeObjectMethodTable;
 
 extern int32_t g_TrapReturningThreads;
 
@@ -774,7 +677,7 @@ public:
 struct ScanContext;
 typedef void promote_func(PTR_PTR_Object, ScanContext*, unsigned);
 
-typedef void (CALLBACK *HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, LPARAM *pExtraInfo, LPARAM param1, LPARAM param2);
+typedef void (*HANDLESCANPROC)(PTR_UNCHECKED_OBJECTREF pref, LPARAM *pExtraInfo, LPARAM param1, LPARAM param2);
 
 class GCToEEInterface
 {

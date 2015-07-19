@@ -23,12 +23,6 @@
 class GCMonoObjectWrapper;
 
 #include "gc.h"
-
-typedef GCMonoObjectWrapper OBJECT_HEADER;
-typedef GCMonoObjectWrapper Object;
-
-//#define DT_LOG
-
 #include "gcrecord.h"
 
 static inline void FATAL_GC_ERROR()
@@ -1260,7 +1254,7 @@ public:
     void shutdown_gc();
 
     PER_HEAP
-    OBJECT_HEDER* allocate (size_t jsize,
+    OBJECT_HEADER* allocate (size_t jsize,
                              alloc_context* acontext);
 
 #ifdef MULTIPLE_HEAPS

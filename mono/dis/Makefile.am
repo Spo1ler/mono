@@ -7,8 +7,12 @@ endif
 if SUPPORT_SGEN
 metadata_lib=$(top_builddir)/mono/metadata/libmonoruntimesgen-static.la
 else
+if SUPPORT_CORGC
+metadata_lib=$(top_builddir)/mono/metadata/libmonoruntimecorgc-static.la
+else
 metadata_lib=$(top_builddir)/mono/metadata/libmonoruntime-static.a
 gc_lib=$(LIBGC_STATIC_LIBS)
+endif
 endif
 
 runtime_lib=	\

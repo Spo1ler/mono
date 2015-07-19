@@ -12,7 +12,7 @@ GCMonoObjectWrapper* GCMonoObjectWrapper::GetHeader()
 
 DWORD GCMonoObjectWrapper::GetNumComponents()
 {
-        return NULL;
+        return mono_array_length((MonoArray*)this);
 }
 
 void GCMonoObjectWrapper::Validate(BOOL bDeep, BOOL bVerifyNextHeader)
@@ -117,12 +117,12 @@ BOOL GCMonoObjectWrapper::IsFree() const
 
 int GCMonoObjectWrapper::GetRequiredAlignment() const
 {
-        return (int)vtable->klass->min_align;
+        return mono_class_min_align(vtable->klass);
 }
 
 BOOL GCMonoObjectWrapper::ContainsPointers() const
 {
-        return !!(vtable->klass->has_references);
+        return mono_class_has_references(vtable->klass);
 }
 
 BOOL GCMonoObjectWrapper::Collectible() const

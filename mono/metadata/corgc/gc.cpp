@@ -20,6 +20,7 @@
 // 
 
 #include "gcpriv.h"
+#include "wrapper.h"
 
 #define USE_INTROSORT
 
@@ -8331,12 +8332,19 @@ retry:
 #define set_pinned(i) header(i)->SetPinned()
 #define clear_pinned(i) header(i)->GetHeader()->ClrGCBit();
 
-inline size_t my_get_size (Object* ob)
+// inline size_t my_get_size (Object* ob)
+// {
+//     MethodTable* mT = header(ob)->GetMethodTable();
+//     return (mT->GetBaseSize() +
+//             (mT->HasComponentSize() ?
+//              ((size_t)(header(ob)->GetNumComponents() * mT->RawGetComponentSize()) : 0));
+// }
+
+inline size_t my_get_size(Object* o)
 {
-    MethodTable* mT = header(ob)->GetMethodTable();
-    return (mT->GetBaseSize() +
-            (mT->HasComponentSize() ?
-             ((size_t)(header(ob)->GetNumComponents() * mT->RawGetComponentSize()) : 0));
+    MonoVTable* mT = header(o)->GetMethodTable();
+    MonoClass* c = mT->klass;
+    return mono_class_instance_size(c) + (MONO_CLASS_IS_ARRAY(c)) ? (header(o)->GetNumComponents() * mono_array_element_size(c)) : 0;
 }
 
 //#define size(i) header(i)->GetSize()

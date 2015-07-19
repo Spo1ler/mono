@@ -2,6 +2,7 @@
 #define CORGC_WRAPPER_H_
 
 #include <mono/metadata/object.h>
+#include <mono/metadata/class-internals.h>
 
 #define BITS_MASK 0xffff
 #define BIT_MARKED 0x1
@@ -10,6 +11,18 @@
 
 class CGDesc;
 struct ScanContext;
+
+class GCMonoVTableWrapper : public MonoVTable
+{
+protected:
+        GCMonoVTableWrapper(){};
+        ~GCMonoVTableWrapper(){};
+public:
+        DWORD GetBaseSize()
+        {
+                return mono_class_instance_size(klass);
+        }
+};
 
 class GCMonoObjectWrapper : public MonoObject
 {
@@ -51,7 +64,7 @@ public:
 
         FORCEINLINE BOOL ContainsPointersOrCollectible() const
         {
-                return CointainsPointers() || Collectible();
+                return ContainsPointers() || Collectible();
         }
 
         void SetBit(DWORD bit);

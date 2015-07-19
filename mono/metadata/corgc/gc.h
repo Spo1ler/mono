@@ -23,8 +23,11 @@ Module Name:
 
 #endif
 
+#include "wrapper.h"
+
 /* forward declerations */
-class Object;
+typedef GCMonoObjectWrapper Object;
+typedef GCMonoVTableWrapper MethodTable;
 
 /*
  * Promotion Function Prototypes
