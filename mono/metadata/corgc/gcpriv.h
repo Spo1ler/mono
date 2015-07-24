@@ -74,7 +74,7 @@ static inline void FATAL_GC_ERROR()
 
 #define MARK_LIST         //used sorted list to speed up plan phase
 
-#define BACKGROUND_GC   //concurrent background GC (requires WRITE_WATCH)
+// #define BACKGROUND_GC   //concurrent background GC (requires WRITE_WATCH)
 
 #ifdef SERVER_GC
 #define MH_SC_MARK //scalable marking
@@ -93,7 +93,7 @@ static inline void FATAL_GC_ERROR()
 
 #define INTERIOR_POINTERS   //Allow interior pointers in the code manager
 
-#define CARD_BUNDLE         //enable card bundle feature.(requires WRITE_WATCH)
+// #define CARD_BUNDLE         //enable card bundle feature.(requires WRITE_WATCH)
 
 // If this is defined we use a map for segments in order to find the heap for 
 // a segment fast. But it does use more memory as we have to cover the whole
