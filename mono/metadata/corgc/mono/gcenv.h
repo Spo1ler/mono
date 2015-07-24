@@ -111,13 +111,13 @@ typedef int32_t HRESULT;
 /*     return (HRESULT)(x) <= 0 ? (HRESULT)(x) : (HRESULT) (((x) & 0x0000FFFF) | (7 << 16) | 0x80000000); */
 /* } */
 
-/* #define S_OK                    0x0 */
-/* #define S_FALSE                 0x1 */
-/* #define E_FAIL                  0x80004005 */
-/* #define E_OUTOFMEMORY           0x8007000E */
-/* #define E_UNEXPECTED            0x8000FFFF */
-/* #define E_NOTIMPL               0x80004001 */
-/* #define E_INVALIDARG            0x80070057 */
+#define S_OK                    0x0
+#define S_FALSE                 0x1
+#define E_FAIL                  0x80004005
+#define E_OUTOFMEMORY           0x8007000E
+#define E_UNEXPECTED            0x8000FFFF
+#define E_NOTIMPL               0x80004001
+#define E_INVALIDARG            0x80070057
 
 /* #define NOERROR                 0x0 */
 /* #define ERROR_TIMEOUT             1460 */

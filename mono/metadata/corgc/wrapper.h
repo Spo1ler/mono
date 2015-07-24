@@ -13,6 +13,10 @@
 class CGDesc;
 struct ScanContext;
 
+// Not sure, in coreclr it was 2*sizeof(BYTE*) + sizeof(ObjHeader),
+// but MonoObject has a sync block inside it rather than outside
+#define MIN_OBJECT_SIZE     (sizeof(BYTE*) + sizeof(MonoObject))
+
 class GCMonoVTableWrapper : public MonoVTable
 {
 protected:
