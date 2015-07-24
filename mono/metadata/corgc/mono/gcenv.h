@@ -7,7 +7,7 @@
 // Setups standalone environment for CLR GC
 //
 
-#define FEATURE_REDHAWK 1
+// #define FEATURE_REDHAWK 1
 #define FEATURE_CONSERVATIVE_GC 1
 // #define _DEBUG
 

@@ -5,8 +5,10 @@
 
 
 
-#include "common.h"
+#include "mono/common.h"
 
+#include "wrapper.h"
+#include "utils.h"
 #include "gcenv.h"
 
 #include "gc.h"

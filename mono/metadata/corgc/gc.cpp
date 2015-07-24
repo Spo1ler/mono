@@ -20,9 +20,6 @@
 // 
 
 #include "gcpriv.h"
-#include "wrapper.h"
-
-#include "utils.h"
 
 #define USE_INTROSORT
 
@@ -9396,7 +9393,7 @@ gc_heap::init_semi_shared()
     bgc_alloc_spin_count = CLRConfig::GetConfigValue(CLRConfig::UNSUPPORTED_BGCSpinCount);
     bgc_alloc_spin = CLRConfig::GetConfigValue(CLRConfig::UNSUPPORTED_BGCSpin);
 
-    {   
+    {
         int number_bgc_threads = 1;
 #ifdef MULTIPLE_HEAPS
         number_bgc_threads = n_heaps;
@@ -9405,8 +9402,8 @@ gc_heap::init_semi_shared()
         {
             goto cleanup;
         }
-#endif //BACKGROUND_GC
     }
+#endif //BACKGROUND_GC
 
     memset (&current_no_gc_region_info, 0, sizeof (no_gc_region_info));
 

@@ -395,13 +395,6 @@ void GCLog (const char *fmt, ... );
 #define dprintf(l,x)
 #endif //TRACE_GC
 
-#ifndef FEATURE_REDHAWK
-#undef  assert
-#define assert _ASSERTE
-#undef  ASSERT
-#define ASSERT _ASSERTE
-#endif // FEATURE_REDHAWK
-
 #ifdef _DEBUG
 
 struct GCDebugSpinLock {
