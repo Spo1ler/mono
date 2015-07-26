@@ -268,6 +268,11 @@ static inline void FATAL_GC_ERROR()
 #endif //ifdef VirtualProtect
 #define VirtualProtect ClrVirtualProtect
 
+#ifdef VirtualUnlock
+#under VirtualUnlock
+#endif //VirtualUnlock
+#define VirtualUnlock ClrVirtualUnlock
+
 #ifdef memcpy
 #undef memcpy
 #endif //memcpy
@@ -1268,7 +1273,7 @@ public:
     // context - we don't actually use the ptr/limit from it so I am
     // making this explicit by not passing in the alloc_context.
     PER_HEAP
-    CObjectHeader* allocate_large_object (size_t size, int64_t& alloc_bytes);
+    OBJECT_HEADER* allocate_large_object (size_t size, int64_t& alloc_bytes);
 
 #ifdef FEATURE_STRUCTALIGN
     PER_HEAP

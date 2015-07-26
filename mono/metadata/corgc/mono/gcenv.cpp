@@ -19,30 +19,30 @@
 
 inline uint32_t convertProtectionFlags(uint32_t win32flags)
 {
-        uint32_t result = 0;
-        if((win32flags & WIN32_PAGE_NOACCESS) = WIN32_PAGE_NOACCESS)
-        {
-                result |= PROT_NONE;
-        }
-        if((win32flags & WIN32_PAGE_READWRITE) = WIN32_PAGE_READWRITE)
-        {
-                result |= (PROT_READ|PROT_WRITE);
-        }
+    uint32_t result = 0;
+    if((win32flags & WIN32_PAGE_NOACCESS) = WIN32_PAGE_NOACCESS)
+    {
+        result |= PROT_NONE;
+    }
+    if((win32flags & WIN32_PAGE_READWRITE) = WIN32_PAGE_READWRITE)
+    {
+        result |= (PROT_READ|PROT_WRITE);
+    }
 
-        return result;
+    return result;
 }
 
 inline uint32_t convertAllocationFlags(uint32_t win32flags)
 {
-        uint32_t result = 0;
+    uint32_t result = 0;
 
-        if((win32flags & WIN32_MEM_RESERVE) == WIN32_MEM_RESERVE)
-        {
-                result |= (MAP_PRIVATE|MAP_ANONYMOUS);
-        }
-        // TODO
+    if((win32flags & WIN32_MEM_RESERVE) == WIN32_MEM_RESERVE)
+    {
+        result |= (MAP_PRIVATE|MAP_ANONYMOUS);
+    }
+    // TODO
 
-        return result;
+    return result;
 }
 
 #endif // _WIN32
@@ -135,6 +135,17 @@ ClrVirtualProtect(
 #else
         ASSERT(lpflOldProtect == NULL);
         return !mprotect(lpAddress, dwSize, convertProtectionFlags(flNewProtect));
+#endif
+}
+
+bool ClrVirtualUnlock(
+        void* lpAddress,
+        size_t dwSize)
+{
+#ifdef _WIN32
+    return VirtualUnlock(lpAddress, dwSize);
+#else
+    return munlock(lpAddress, dwSize) != -1;
 #endif
 }
 

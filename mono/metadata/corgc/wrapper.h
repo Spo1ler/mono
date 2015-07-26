@@ -4,6 +4,7 @@
 #include <mono/metadata/object.h>
 #include <mono/metadata/object-internals.h>
 #include <mono/metadata/class-internals.h>
+#include "mono/gcenv.h"
 
 #define BITS_MASK 0xffff
 #define BIT_MARKED 0x1
@@ -20,61 +21,90 @@ struct ScanContext;
 class GCMonoVTableWrapper : public MonoVTable
 {
 protected:
-        GCMonoVTableWrapper(){};
-        ~GCMonoVTableWrapper(){};
+    GCMonoVTableWrapper(){};
+    ~GCMonoVTableWrapper(){};
 public:
-        DWORD GetBaseSize()
-        {
-                return mono_class_instance_size(klass);
-        }
+    DWORD GetBaseSize() const
+    {
+        return mono_class_instance_size(klass);
+    }
+
+    BOOL HasComponentSize() const
+    {
+        return klass->rank > 0;
+    }
+
+    WORD RawGetComponentSize() const
+    {
+        return mono_array_element_size(klass);
+    }
+
+    SIZE_T GetComponentSize() const
+    {
+        return HasComponentSize() ? RawGetComponentSize() : 0;
+    }
+
+    BOOL HasFinalizer() const
+    {
+        return mono_class_has_finalizer(klass);
+    }
+
+    BOOL HasCriticalFinalizer() const
+    {
+        return mono_class_has_parent_and_ignore_generics(klass, mono_defaults.critical_finalizer_object);
+    }
 };
 
 class GCMonoObjectWrapper : public MonoObject
 {
 protected:
-        GCMonoObjectWrapper(){};
-        ~GCMonoObjectWrapper(){};
+    GCMonoObjectWrapper(){};
+    ~GCMonoObjectWrapper(){};
 public:
-        MonoVTable* RawGetMethodTable() const;
-        DWORD GetNumComponents();
+    MonoVTable* RawGetMethodTable() const;
+    DWORD GetNumComponents();
 
-        GCMonoObjectWrapper *GetHeader();
+    GCMonoObjectWrapper *GetHeader();
 
-        void Validate(BOOL bDeep=TRUE, BOOL bVerifyNextHeader=TRUE);
-        void ValidatePromote(ScanContext *sc, DWORD flags);
-        void ValidateHeap(MonoObject *from, BOOL bDeep);
+    void Validate(BOOL bDeep=TRUE, BOOL bVerifyNextHeader=TRUE);
+    void ValidatePromote(ScanContext *sc, DWORD flags);
+    void ValidateHeap(MonoObject *from, BOOL bDeep);
 
-        ADIndex GetAppDomainIndex();
+    ADIndex GetAppDomainIndex();
 
-        MonoVTable* GetMethodTable() const;
+    MonoVTable* GetMethodTable() const;
 
-        void SetMarked();
-        BOOL IsMarked() const;
+    void SetMarked();
+    BOOL IsMarked() const;
 
-        void SetPinned();
-        BOOL IsPinned() const;
+    void SetPinned();
+    BOOL IsPinned() const;
 
-        void ClearMarked();
+    void ClearMarked();
 
-        CGDesc *GetSlotMap();
+    CGDesc *GetSlotMap();
 
-        void SetFree(size_t size);
-        void UnsetFree();
-        BOOL IsFree() const;
+    void SetFree(size_t size);
+    void UnsetFree();
+    BOOL IsFree() const;
 
-        int GetRequiredAlignment() const;
-        BOOL ContainsPointers() const;
+    int GetRequiredAlignment() const;
+    BOOL ContainsPointers() const;
 
-        BOOL Collectible() const;
+    BOOL Collectible() const;
 
-        FORCEINLINE BOOL ContainsPointersOrCollectible() const
-        {
-                return ContainsPointers() || Collectible();
-        }
+    FORCEINLINE BOOL ContainsPointersOrCollectible() const
+    {
+        return ContainsPointers() || Collectible();
+    }
 
-        void SetBit(DWORD bit);
-        DWORD GetBits();
-        void ClrBit(DWORD bit);
+    void SetBit(DWORD bit);
+    DWORD GetBits() const;
+    void ClrBit(DWORD bit);
+    GCMonoObjectWrapper* GetObjectBase()
+    {
+        return this;
+    }
 };
 
 

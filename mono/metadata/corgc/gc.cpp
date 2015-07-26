@@ -8327,7 +8327,7 @@ retry:
 #define clear_marked(i) header(i)->ClearMarked()
 #define pinned(i) header(i)->IsPinned()
 #define set_pinned(i) header(i)->SetPinned()
-#define clear_pinned(i) header(i)->GetHeader()->ClrGCBit();
+#define clear_pinned(i) header(i)->GetHeader()->ClrBit(BIT_PINNED)
 
 inline size_t my_get_size(Object* o)
 {
@@ -16840,7 +16840,7 @@ void gc_heap::mark_object_simple1 (BYTE* oo, BYTE* start THREAD_NUMBER_DCL)
 
                 if (mark_stack_tos + (s) /sizeof (BYTE*) >= (mark_stack_limit  - 1))
                 {
-                    size_t num_components = ((method_table(oo))->HasComponentSize() ? (header(oo)->GetNumComponents() : 0);
+                    size_t num_components = ((method_table(oo))->HasComponentSize() ? header(oo)->GetNumComponents() : 0);
                     if (mark_stack_tos + CGCDesc::GetNumPointers(method_table(oo), s, num_components) >= (mark_stack_limit - 1))
                     {
                         overflow_p = TRUE;
@@ -32644,8 +32644,8 @@ void CGCDescGcScan(LPVOID pvCGCDesc, promote_func* fn, ScanContext* sc)
     assert (cur >= last);
     do
     {
-        BYTE** ppslot = (BYTE**)((PBYTE)pvCGCDesc + cur->GetSeriesOffset());
-        BYTE**ppstop = (BYTE**)((PBYTE)ppslot + cur->GetSeriesSize());
+        BYTE** ppslot = (BYTE**)((BYTE*)pvCGCDesc + cur->GetSeriesOffset());
+        BYTE**ppstop = (BYTE**)((BYTE*)ppslot + cur->GetSeriesSize());
 
         while (ppslot < ppstop)
         {
@@ -35322,14 +35322,14 @@ CFinalize::FinalizeSegForAppDomain (AppDomain *pDomain,
         }
 #endif //!FEATURE_REDHAWK
 
-        if (!fRunFinalizers || (obj->GetHeader()->GetBits()) & BIT_SBLK_FINALIZER_RUN)
+        if (!fRunFinalizers || (obj->GetHeader()->GetBits()) & BIT_FINALIZER_RUN)
         {
             //remove the object because we don't want to
             //run the finalizer
             MoveItem (i, Seg, FreeList);
             //Reset the bit so it will be put back on the queue
             //if resurrected and re-registered.
-            obj->GetHeader()->ClrBit (BIT_SBLK_FINALIZER_RUN);
+            obj->GetHeader()->ClrBit (BIT_FINALIZER_RUN);
         }
         else
         {
@@ -35490,7 +35490,7 @@ CFinalize::ScanForFinalization (promote_func* pfn, int gen, BOOL mark_only_p,
                     }
                     else
 #endif //!FEATURE_REDHAWK
-                    if ((obj->GetHeader()->GetBits()) & BIT_SBLK_FINALIZER_RUN)
+                    if ((obj->GetHeader()->GetBits()) & BIT_FINALIZER_RUN)
                     {
                         //remove the object because we don't want to
                         //run the finalizer
@@ -35499,7 +35499,7 @@ CFinalize::ScanForFinalization (promote_func* pfn, int gen, BOOL mark_only_p,
 
                         //Reset the bit so it will be put back on the queue
                         //if resurrected and re-registered.
-                        obj->GetHeader()->ClrBit (BIT_SBLK_FINALIZER_RUN);
+                        obj->GetHeader()->ClrBit (BIT_FINALIZER_RUN);
 
                     }
                     else

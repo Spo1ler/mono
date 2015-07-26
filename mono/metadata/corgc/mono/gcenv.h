@@ -7,7 +7,10 @@
 // Setups standalone environment for CLR GC
 //
 
-// #define FEATURE_REDHAWK 1
+#ifndef MONO_GCENV
+#define MONO_GCENV
+
+#define FEATURE_REDHAWK 1
 #define FEATURE_CONSERVATIVE_GC 1
 // #define _DEBUG
 
@@ -95,9 +98,12 @@ typedef void * HANDLE;
 /*     LONGLONG QuadPart; */
 /* } LARGE_INTEGER, *PLARGE_INTEGER; */
 
-/* #define SIZE_T_MAX ((size_t)-1) */
-/* #define SSIZE_T_MAX ((ssize_t)(SIZE_T_MAX / 2)) */
-
+#ifndef SIZE_T_MAX
+#define SIZE_T_MAX ((size_t)-1)
+#endif /*SIZE_T_MAX*/
+#ifndef SSIZE_T_MAX
+#define SSIZE_T_MAX ((ssize_t)(SIZE_T_MAX / 2))
+#endif /*SSIZE_T_MAX*/
 // -----------------------------------------------------------------------------------------------------------
 // HRESULT subset.
 
@@ -593,6 +599,10 @@ ClrVirtualProtect(
            size_t dwSize,
            uint32_t flNewProtect,
            uint32_t * lpflOldProtect);
+
+bool ClrVirtualUnlock(
+                      void* lpAddress,
+                      size_t dwSize);
 
 //
 // Locks
@@ -1173,3 +1183,5 @@ public:
     AppDomain *DefaultDomain() { return NULL; }
     DWORD GetTotalNumSizedRefHandles() { return 0; }
 };
+
+#endif /* MONO_GCENV */
