@@ -12,7 +12,7 @@
  *
  */
 
-#include "common.h"
+#include "mono/common.h"
 
 #include "gcenv.h"
 

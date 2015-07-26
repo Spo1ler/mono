@@ -72,12 +72,11 @@ mono_gc_base_init (void)
 	memset (&cb, 0, sizeof (cb));
 	cb.thread_register = corgc_thread_register;
 	cb.thread_unregister = corgc_thread_unregister;
-	cb.mono_method_is_critical = (gpointer)mono_runtime_is_critical_method;
+	cb.mono_method_is_critical = (gboolean(*)(void*))mono_runtime_is_critical_method;
 #ifndef HOST_WIN32
 	cb.thread_exit = mono_gc_pthread_exit;
-	cb.mono_gc_pthread_create = (gpointer)mono_gc_pthread_create;
+	cb.mono_gc_pthread_create = mono_gc_pthread_create;
 #endif
-	
 	mono_threads_init (&cb, sizeof (MonoThreadInfo));
 	// mono_mutex_init (&mono_gc_lock);
 
@@ -94,6 +93,7 @@ mono_gc_collect (int generation)
         return;
 
     GCHeap* pGCHeap = GCHeap::GetGCHeap();
+	pGCHeap->GarbageCollect(generation);
 }
 
 int
@@ -259,7 +259,7 @@ mono_gc_wbarrier_generic_store (gpointer ptr, MonoObject* value)
 void
 mono_gc_wbarrier_generic_store_atomic (gpointer ptr, MonoObject *value)
 {
-	InterlockedWritePointer (ptr, value);
+	InterlockedWritePointer ((void**)ptr, (void*)value);
 }
 
 void
@@ -361,7 +361,7 @@ mono_gc_get_write_barrier (void)
 	mb = mono_mb_new (mono_defaults.object_class, "wbarrier", MONO_WRAPPER_WRITE_BARRIER);
 
 	mono_mb_emit_ldarg (mb, 0);
-	mono_mb_emit_icall (mb, mono_gc_wbarrier_generic_nostore);
+	mono_mb_emit_icall (mb, (void*)mono_gc_wbarrier_generic_nostore);
 	mono_mb_emit_byte (mb, CEE_RET);
 
 	res = mono_mb_create_method (mb, sig, 16);
@@ -531,7 +531,7 @@ BOOL APIENTRY mono_gc_dllmain (HMODULE module_handle, DWORD reason, LPVOID reser
 #endif
 
 guint
-mono_gc_get_vtable_bits (MonoClass *class)
+mono_gc_get_vtable_bits (MonoClass *klass)
 {
 	return 0;
 }
@@ -592,7 +592,7 @@ mono_gc_register_root_wbarrier (char *start, size_t size, void *descr)
 void*
 mono_gc_alloc_obj (MonoVTable *vtable, size_t size)
 {
-	void **res = g_malloc0 (size);
+	void **res = (void**)g_malloc0 (size);
 	*res = vtable;
 	return res;
 }

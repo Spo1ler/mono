@@ -245,7 +245,7 @@ corgc_sources = \
 	corgc/wrapper.cpp	\
 	corgc/wrapper.h    \
     corgc/mono/gcenv.cpp \
-	corgc/corgc-gc.c
+	corgc/corgc-gc.cpp
 
 sgen_sources = \
 	sgen-os-posix.c		\
