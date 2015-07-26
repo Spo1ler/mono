@@ -1,4 +1,4 @@
-#include "mono/gcenv.h"
+#include "gcenv.h"
 
 #define WIN32_MEM_COMMIT              0x1000
 #define WIN32_MEM_RESERVE             0x2000
@@ -20,11 +20,11 @@
 inline uint32_t convertProtectionFlags(uint32_t win32flags)
 {
     uint32_t result = 0;
-    if((win32flags & WIN32_PAGE_NOACCESS) = WIN32_PAGE_NOACCESS)
+    if((win32flags & WIN32_PAGE_NOACCESS) == WIN32_PAGE_NOACCESS)
     {
         result |= PROT_NONE;
     }
-    if((win32flags & WIN32_PAGE_READWRITE) = WIN32_PAGE_READWRITE)
+    if((win32flags & WIN32_PAGE_READWRITE) == WIN32_PAGE_READWRITE)
     {
         result |= (PROT_READ|PROT_WRITE);
     }
@@ -38,7 +38,7 @@ inline uint32_t convertAllocationFlags(uint32_t win32flags)
 
     if((win32flags & WIN32_MEM_RESERVE) == WIN32_MEM_RESERVE)
     {
-        result |= (MAP_PRIVATE|MAP_ANONYMOUS);
+        result |= (MAP_PRIVATE|MAP_ANON);
     }
     // TODO
 
@@ -85,8 +85,6 @@ void * ClrVirtualAllocAligned(
     dwSize += alignment;
     size_t addr = (size_t)ClrVirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
     return (void*)((addr + (alignment - 1)) & ~(alignment - 1));
-
-#endif // !FEATURE_PAL
 }
 
 bool ClrVirtualFree(
@@ -100,12 +98,12 @@ bool ClrVirtualFree(
         bool success;
         if((dwFreeType & WIN32_MEM_DECOMMIT) == WIN32_MEM_DECOMMIT) // Decommit memory
         {
-                successs = mmap(lpAddress,
-                                dwSize,
-                                PROT_NONE,
-                                MAP_FIXED|MAP_PRIVATE|MAP_ANONYMOUS,
-                                -1, 0)
-                        != MAP_FAILED);
+                success = mmap(lpAddress,
+                               dwSize,
+                               PROT_NONE,
+                               MAP_FIXED|MAP_PRIVATE|MAP_ANON,
+                               -1, 0)
+                       != MAP_FAILED;
                 if(success)
                 {
                        return  msync(lpAddress, dwSize, MS_SYNC|MS_INVALIDATE) != -1;
@@ -113,13 +111,14 @@ bool ClrVirtualFree(
         }
         else // Free memory
         {
-                success = msync(lpAddress, size, MS_SYNC) != -1;
+                success = msync(lpAddress, dwSize, MS_SYNC) != -1;
                 if(success)
                 {
                         return munmap(lpAddress, dwSize) != -1;
                 }
         }
 
+        return false;
 #endif
 }
 
@@ -149,9 +148,9 @@ bool ClrVirtualUnlock(
 #endif
 }
 
-#undefine WIN32_MEM_COMMIT
-#undefine WIN32_MEM_DECOMMIT
-#undefine WIN32_MEM_RESERVE
-#undefine WIN32_MEM_RESET
-#undefine WIN32_PAGE_NOACCESS
-#undefine WIN32_PAGE_READWRITE
+#undef WIN32_MEM_COMMIT
+#undef WIN32_MEM_DECOMMIT
+#undef WIN32_MEM_RESERVE
+#undef WIN32_MEM_RESET
+#undef WIN32_PAGE_NOACCESS
+#undef WIN32_PAGE_READWRITE

@@ -451,15 +451,7 @@ inline T FastInterlockExchangePointer(
     T volatile * target,
     T            value)
 {
-    return (T)_FastInterlockExchangePointer((void **)target, value);
-}
-
-template <typename T>
-inline T FastInterlockExchangePointer(
-    T volatile * target,
-    nullptr_t    value)
-{
-    return (T)_FastInterlockExchangePointer((void **)target, value);
+  return (T)_FastInterlockExchangePointer((void **)target, (void*)value);
 }
 
 template <typename T>
@@ -470,16 +462,6 @@ inline T FastInterlockCompareExchangePointer(
 {
     return (T)_FastInterlockCompareExchangePointer((void **)destination, exchange, comparand);
 }
-
-template <typename T>
-inline T FastInterlockCompareExchangePointer(
-    T volatile * destination,
-    T            exchange,
-    nullptr_t    comparand)
-{
-    return (T)_FastInterlockCompareExchangePointer((void **)destination, exchange, comparand);
-}
-
 
 void FastInterlockOr(uint32_t volatile *p, uint32_t msk);
 void FastInterlockAnd(uint32_t volatile *p, uint32_t msk);

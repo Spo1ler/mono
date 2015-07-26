@@ -6,12 +6,12 @@
 #include <mono/metadata/class-internals.h>
 #include "mono/gcenv.h"
 
-#define BITS_MASK 0xffff
+#define BIT_MASK 0xffff
 #define BIT_MARKED 0x1
 #define BIT_PINNED 0x2
 #define BIT_FINALIZER_RUN 0x4
 
-class CGDesc;
+class CGCDesc;
 struct ScanContext;
 
 // Not sure, in coreclr it was 2*sizeof(BYTE*) + sizeof(ObjHeader),
@@ -61,6 +61,7 @@ protected:
     GCMonoObjectWrapper(){};
     ~GCMonoObjectWrapper(){};
 public:
+    void RawSetMethodTable(GCMonoVTableWrapper* table);
     MonoVTable* RawGetMethodTable() const;
     DWORD GetNumComponents();
 
@@ -68,7 +69,7 @@ public:
 
     void Validate(BOOL bDeep=TRUE, BOOL bVerifyNextHeader=TRUE);
     void ValidatePromote(ScanContext *sc, DWORD flags);
-    void ValidateHeap(MonoObject *from, BOOL bDeep);
+    void ValidateHeap(GCMonoObjectWrapper *from, BOOL bDeep);
 
     ADIndex GetAppDomainIndex();
 
@@ -82,7 +83,7 @@ public:
 
     void ClearMarked();
 
-    CGDesc *GetSlotMap();
+    CGCDesc *GetSlotMap();
 
     void SetFree(size_t size);
     void UnsetFree();

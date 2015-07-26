@@ -22,7 +22,6 @@
 extern void corgc_init (void);
 extern void corgc_attach (void);
 
-	
 static gboolean gc_initialized = FALSE;
 static MonoMethod *write_barrier_method;
 static MonoVTable *array_fill_vtable;
@@ -176,19 +175,19 @@ mono_gc_deregister_root (char* addr)
 void
 mono_gc_weak_link_add (void **link_addr, MonoObject *obj, gboolean track)
 {
-	*link_addr = obj;
+
 }
 
 void
 mono_gc_weak_link_remove (void **link_addr, gboolean track)
 {
-	*link_addr = NULL;
+
 }
 
 MonoObject*
 mono_gc_weak_link_get (void **link_addr)
 {
-	return *link_addr;
+	return NULL;
 }
 
 void*
