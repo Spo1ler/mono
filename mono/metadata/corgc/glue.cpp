@@ -29,10 +29,9 @@ void InitializeSystemInfo()
 extern "C" void
 corgc_init ()
 {
-	
-	InitializeSystemInfo ();
+    InitializeSystemInfo ();
 
-	g_pFreeObjectMethodTable = corgc_get_array_fill_vtable ();
+    g_pFreeObjectMethodTable = corgc_get_array_fill_vtable ();
     if (!Ref_Initialize())
         g_error ("FAILED to init handle table");
 
@@ -48,5 +47,5 @@ corgc_init ()
 extern "C" void
 corgc_attach ()
 {
-	ThreadStore::AttachCurrentThread(false);	
+        ThreadStore::AttachCurrentThread(false);
 }

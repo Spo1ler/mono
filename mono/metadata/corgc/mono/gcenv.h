@@ -463,8 +463,20 @@ inline T FastInterlockCompareExchangePointer(
     return (T)_FastInterlockCompareExchangePointer((void **)destination, exchange, comparand);
 }
 
-void FastInterlockOr(uint32_t volatile *p, uint32_t msk);
-void FastInterlockAnd(uint32_t volatile *p, uint32_t msk);
+#ifndef MSC_VER
+inline uint32_t FastInterlockOr(uint32_t volatile *p, uint32_t msk)
+{
+    return __sync_fetch_and_or(p, msk);
+}
+
+inline uint32_t FastInterlockAnd(uint32_t volatile *p, uint32_t msk)
+{
+    return __sync_fetch_and_and(p, msk);
+}
+#else
+uint32_t FastInterlockOr(uint32_t volatile*, uint32_t);
+uint32_t FastInterlockAnd(uint32_t volatile*, uint32_t);
+#endif /* MSC_VER */
 
 #define CALLER_LIMITS_SPINNING 0
 bool __SwitchToThread (uint32_t dwSleepMSec, uint32_t dwSwitchCount);

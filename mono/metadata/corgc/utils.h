@@ -15,21 +15,21 @@
 #define CORGC_UTILS_API
 #endif /*TARGET_x86*/
 
+#define FATAL_ASSERT(e, msg)                                            \
+        do                                                              \
+                {                                                       \
+                        if (!(e))                                       \
+                                {                                       \
+                                        fprintf(stderr, "FATAL ERROR: " msg); \
+                                        abort();                        \
+                                }                                       \
+                }                                                       \
+        while(0)
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif /*__cplusplus*/
-
-#define FATAL_ASSERT(e, msg)                                    \
-        do                                                      \
-        {                                                       \
-                if (!(e))                                       \
-                {                                               \
-                        fprintf(stderr, "FATAL ERROR: " msg);   \
-                        abort();                                \
-                }                                               \
-        }                                                       \
-        while(0)
 
 CORGC_UTILS_IMPORT VOID CORGC_UTILS_API FlushProcessWriteBuffers();
 

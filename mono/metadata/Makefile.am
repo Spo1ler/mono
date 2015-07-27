@@ -244,7 +244,8 @@ corgc_sources = \
 	corgc/glue.cpp	\
 	corgc/wrapper.cpp	\
 	corgc/wrapper.h    \
-    corgc/mono/gcenv.cpp \
+	corgc/mono/gcenv.cpp \
+	corgc/utils.cpp	\
 	corgc/corgc-gc.cpp
 
 sgen_sources = \

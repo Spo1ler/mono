@@ -19,18 +19,22 @@
 #ifdef HAVE_COR_GC
 
 //glue.cpp code
+extern "C"
+{
 extern void corgc_init (void);
 extern void corgc_attach (void);
-
 static gboolean gc_initialized = FALSE;
 static MonoMethod *write_barrier_method;
 static MonoVTable *array_fill_vtable;
+}
 
 
 #define ALLOC_ALIGN 8
 #define CAN_ALIGN_UP(s)		((s) <= SIZE_MAX - (ALLOC_ALIGN - 1))
 #define ALIGN_UP(s)		(((s)+(ALLOC_ALIGN-1)) & ~(ALLOC_ALIGN-1))
 #define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+
+#define header(o) ((GCMonoObjectWrapper*)o)
 
 static void*
 corgc_thread_register (MonoThreadInfo* info, void *baseptr)
@@ -93,7 +97,7 @@ mono_gc_collect (int generation)
         return;
 
     GCHeap* pGCHeap = GCHeap::GetGCHeap();
-	pGCHeap->GarbageCollect(generation);
+    pGCHeap->GarbageCollect(generation);
 }
 
 int

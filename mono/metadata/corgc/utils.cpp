@@ -3,12 +3,16 @@
 
 #include "utils.h"
 #include <pthread.h>
+#include <sys/mman.h>
+#include <mono/utils/atomic.h>
 
 #ifdef __sparc__
-VIRTUAL_PAGE_SIZE       = 0x2000,
+#define VIRTUAL_PAGE_SIZE  0x2000
 #else   // __sparc__
-        VIRTUAL_PAGE_SIZE       = 0x1000,
+#define VIRTUAL_PAGE_SIZE  0x1000
 #endif  // __sparc__
+
+static bool s_flushProcessWriteBuffersInitialized = false;
 
 //
 // Helper memory page used by the FlushProcessWriteBuffers
@@ -31,31 +35,40 @@ pthread_mutex_t flushProcessWriteBuffersMutex;
   --*/
 BOOL InitializeFlushProcessWriteBuffers()
 {
-        // Verify that the s_helperPage is really aligned to the VIRTUAL_PAGE_SIZE
-        _ASSERTE((((SIZE_T)s_helperPage) & (VIRTUAL_PAGE_SIZE - 1)) == 0);
+    // Verify that the s_helperPage is really aligned to the VIRTUAL_PAGE_SIZE
+    g_assert((((SIZE_T)s_helperPage) & (VIRTUAL_PAGE_SIZE - 1)) == 0);
 
-        // Locking the page ensures that it stays in memory during the two mprotect
-        // calls in the FlushProcessWriteBuffers below. If the page was unmapped between
-        // those calls, they would not have the expected effect of generating IPI.
-        int status = mlock(s_helperPage, VIRTUAL_PAGE_SIZE);
+    // Locking the page ensures that it stays in memory during the two mprotect
+    // calls in the FlushProcessWriteBuffers below. If the page was unmapped between
+    // those calls, they would not have the expected effect of generating IPI.
+    int status = mlock(s_helperPage, VIRTUAL_PAGE_SIZE);
 
-        if (status != 0)
-        {
-                return FALSE;
-        }
+    if (status != 0)
+    {
+        return FALSE;
+    }
 
-        status = pthread_mutex_init(&flushProcessWriteBuffersMutex, NULL);
-        if (status != 0)
-        {
-                munlock(s_helperPage, VIRTUAL_PAGE_SIZE);
-        }
+    status = pthread_mutex_init(&flushProcessWriteBuffersMutex, NULL);
+    if (status != 0)
+    {
+        munlock(s_helperPage, VIRTUAL_PAGE_SIZE);
+        s_flushProcessWriteBuffersInitialized = true;
+    }
 
-        return status == 0;
+    return status == 0;
 }
 
 void CORGC_UTILS_API FlushProcessWriteBuffers()
 {
-int status = pthread_mutex_lock(&flushProcessWriteBuffersMutex);
+    int status = 0;
+    if(!s_flushProcessWriteBuffersInitialized)
+    {
+        status = InitializeFlushProcessWriteBuffers();
+    }
+
+    FATAL_ASSERT(status == 0, "Failed to initialize flush process write buffers");
+
+    status = pthread_mutex_lock(&flushProcessWriteBuffersMutex);
     FATAL_ASSERT(status == 0, "Failed to lock the flushProcessWriteBuffersMutex lock");
 
     // Changing a helper memory page protection from read / write to no access
