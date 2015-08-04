@@ -70,10 +70,18 @@
 /* pthread function wrappers */
 #include <pthread.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int mono_gc_pthread_create (pthread_t *new_thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg);
 int mono_gc_pthread_join (pthread_t thread, void **retval);
 int mono_gc_pthread_detach (pthread_t thread);
 void mono_gc_pthread_exit (void *retval) G_GNUC_NORETURN;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

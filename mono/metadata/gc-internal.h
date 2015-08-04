@@ -23,6 +23,11 @@ typedef struct {
 	guint64 major_gc_time_concurrent;
 } GCStats;
 
+#ifdef __cplusplus
+extern "C" {
+#define extern
+#endif
+
 #define mono_domain_finalizers_lock(domain) mono_mutex_lock (&(domain)->finalizable_objects_hash_lock);
 #define mono_domain_finalizers_unlock(domain) mono_mutex_unlock (&(domain)->finalizable_objects_hash_lock);
 
@@ -119,9 +124,9 @@ extern MONO_API gpointer mono_gc_out_of_memory (size_t size);
 extern MONO_API void     mono_gc_enable_events (void);
 
 /* disappearing link functionality */
-void        mono_gc_weak_link_add    (void **link_addr, MonoObject *obj, gboolean track);
-void        mono_gc_weak_link_remove (void **link_addr, gboolean track);
-MonoObject *mono_gc_weak_link_get    (void **link_addr);
+extern void        mono_gc_weak_link_add    (void **link_addr, MonoObject *obj, gboolean track);
+extern void        mono_gc_weak_link_remove (void **link_addr, gboolean track);
+extern MonoObject *mono_gc_weak_link_get    (void **link_addr);
 
 /*Ephemeron functionality. Sgen only*/
 gboolean    mono_gc_ephemeron_array_add (MonoObject *obj);
@@ -185,7 +190,7 @@ void* mono_gc_make_descr_for_array (int vector, gsize *elem_bitmap, int numbits,
 void  mono_gc_register_for_finalization (MonoObject *obj, void *user_data);
 void  mono_gc_add_memory_pressure (gint64 value);
 MONO_API int   mono_gc_register_root (char *start, size_t size, void *descr);
-void  mono_gc_deregister_root (char* addr);
+extern void  mono_gc_deregister_root (char* addr);
 int   mono_gc_finalizers_for_domain (MonoDomain *domain, MonoObject **out_array, int out_size);
 void  mono_gc_run_finalize (void *obj, void *data);
 void  mono_gc_clear_domain (MonoDomain * domain);
@@ -389,6 +394,11 @@ void mono_gc_memmove_aligned (void *dest, const void *src, size_t size);
 guint mono_gc_get_vtable_bits (MonoClass *klass);
 
 void mono_gc_register_altstack (gpointer stack, gint32 stack_size, gpointer altstack, gint32 altstack_size);
+
+#ifdef __cplusplus
+}
+#undef extern
+#endif
 
 #endif /* __MONO_METADATA_GC_INTERNAL_H__ */
 

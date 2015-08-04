@@ -2,16 +2,18 @@
 #include <pthread.h>
 
 #include "config.h"
+extern "C"{
 #include <mono/metadata/mono-gc.h>
 #include <mono/metadata/gc-internal.h>
 #include <mono/metadata/runtime.h>
 #include <mono/metadata/method-builder.h>
 #include <mono/metadata/object-internals.h>
+#include <mono/metadata/class-internals.h>
 
 #include <mono/utils/atomic.h>
 #include <mono/utils/mono-threads.h>
 #include <mono/utils/mono-counters.h>
-
+}
 #include <mono/metadata/corgc/gc.h>
 
 #define HAVE_COR_GC
@@ -26,8 +28,6 @@ extern void corgc_attach (void);
 static gboolean gc_initialized = FALSE;
 static MonoMethod *write_barrier_method;
 static MonoVTable *array_fill_vtable;
-}
-
 
 #define ALLOC_ALIGN 8
 #define CAN_ALIGN_UP(s)		((s) <= SIZE_MAX - (ALLOC_ALIGN - 1))
@@ -35,6 +35,7 @@ static MonoVTable *array_fill_vtable;
 #define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
 
 #define header(o) ((GCMonoObjectWrapper*)o)
+#define heap() GCHeap::GetGCHeap()
 
 static void*
 corgc_thread_register (MonoThreadInfo* info, void *baseptr)
@@ -69,7 +70,7 @@ mono_gc_base_init (void)
 	if (gc_initialized)
 		return;
 
-	mono_counters_init ();
+	//mono_counters_init ();
 
 	corgc_init ();
 
@@ -81,7 +82,7 @@ mono_gc_base_init (void)
 	cb.thread_exit = mono_gc_pthread_exit;
 	cb.mono_gc_pthread_create = mono_gc_pthread_create;
 #endif
-	mono_threads_init (&cb, sizeof (MonoThreadInfo));
+	// mono_threads_init (&cb, sizeof (MonoThreadInfo));
 	// mono_mutex_init (&mono_gc_lock);
 
 	mono_thread_info_attach (&dummy);
@@ -109,48 +110,52 @@ mono_gc_max_generation (void)
 int
 mono_gc_get_generation  (MonoObject *object)
 {
-	return 0;
+	return heap()->WhichGeneration(header(object));
 }
 
 int
 mono_gc_collection_count (int generation)
 {
-	return 0;
+	return heap()->CollectionCount(generation);
 }
 
 void
 mono_gc_add_memory_pressure (gint64 value)
 {
+// TODO
 }
 
 /* maybe track the size, not important, though */
 int64_t
 mono_gc_get_used_size (void)
 {
-	return 1024*1024;
+	return heap()->GetTotalBytesInUse();
 }
 
 int64_t
 mono_gc_get_heap_size (void)
 {
-	return 0;
+    return heap()->GetTotalBytesInUse();
 }
 
 gboolean
 mono_gc_is_gc_thread (void)
 {
+// TODO
 	return TRUE;
 }
 
 gboolean
 mono_gc_register_thread (void *baseptr)
 {
+// TODO
 	return mono_thread_info_attach (baseptr) != NULL;
 }
 
 int
 mono_gc_walk_heap (int flags, MonoGCReferences callback, void *data)
 {
+// TODO
 	return 1;
 }
 
@@ -596,15 +601,23 @@ mono_gc_register_root_wbarrier (char *start, size_t size, void *descr)
 void*
 mono_gc_alloc_obj (MonoVTable *vtable, size_t size)
 {
-	void **res = (void**)g_malloc0 (size);
-	*res = vtable;
-	return res;
+	int flags = 0;
+	if(vtable->klass->has_references)
+		flags |= GC_ALLOC_CONTAINS_REF;
+
+	if(mono_class_has_finalizer(vtable->klass))
+		flags |= GC_ALLOC_FINALIZE;
+
+    MonoObject* obj = heap()->Alloc(size, flags);
+    obj->vtable = vtable;
+
+	return obj;
 }
 
 void*
 mono_gc_alloc_vector (MonoVTable *vtable, size_t size, uintptr_t max_length)
 {
-	MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);;
+	MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);
 	arr->max_length = (mono_array_size_t)max_length;
 	return arr;
 }
@@ -613,7 +626,7 @@ mono_gc_alloc_vector (MonoVTable *vtable, size_t size, uintptr_t max_length)
 void*
 mono_gc_alloc_array (MonoVTable *vtable, size_t size, uintptr_t max_length, uintptr_t bounds_size)
 {
-	MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);;
+	MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);
 	MonoArrayBounds *bounds = (MonoArrayBounds*)((char*)arr + size - bounds_size);
 
 	arr->max_length = (mono_array_size_t)max_length;
@@ -671,5 +684,6 @@ corgc_get_array_fill_vtable (void)
 	return array_fill_vtable;
 }
 
+}
 
 #endif

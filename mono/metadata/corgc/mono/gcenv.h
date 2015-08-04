@@ -22,17 +22,18 @@
 
 #include <mono/metadata/class-internals.h>
 
+#ifdef _MSC_VER
+#define FORCEINLINE __forceinline
+#else
+#define FORCEINLINE inline __attribute__((always_inline))
+#include <mono/utils/atomic.h>
+#endif
+
 class GCMonoObjectWrapper;
 class GCMonoVTableWrapper;
 
 typedef GCMonoObjectWrapper Object;
 typedef GCMonoVTableWrapper MethodTable;
-
-#ifdef _MSC_VER
-#define FORCEINLINE __forceinline
-#else
-#define FORCEINLINE inline __attribute__((always_inline))
-#endif
 
 #ifndef _INC_WINDOWS
 
@@ -464,6 +465,7 @@ inline T FastInterlockCompareExchangePointer(
 }
 
 #ifndef MSC_VER
+
 inline uint32_t FastInterlockOr(uint32_t volatile *p, uint32_t msk)
 {
     return __sync_fetch_and_or(p, msk);
@@ -473,13 +475,29 @@ inline uint32_t FastInterlockAnd(uint32_t volatile *p, uint32_t msk)
 {
     return __sync_fetch_and_and(p, msk);
 }
+
+#define FastInterlockExchange InterlockedExchange
+#define FastInterlockIncrement InterlockedIncrement
+#define FastInterlockDecrement InterlockedDecrement
+
+/* inline uint32_t FastInterlockExchange(uint32_t volatile* value, uint32_t newValue) */
+/* { */
+/*     uint32_t oldValue; */
+/*     do{ */
+/*         oldValue = *value; */
+/*     } */
+/*     while(__sync_val_compare_and_swap(value, oldValuee, newValue) != oldValue); */
+/*     return oldValue; */
+/* } */
+
 #else
 uint32_t FastInterlockOr(uint32_t volatile*, uint32_t);
 uint32_t FastInterlockAnd(uint32_t volatile*, uint32_t);
+bool __SwitchToThread (uint32_t dwSleepMSec, uint32_t dwSwitchCount);
 #endif /* MSC_VER */
 
 #define CALLER_LIMITS_SPINNING 0
-bool __SwitchToThread (uint32_t dwSleepMSec, uint32_t dwSwitchCount);
+
 
 //-------------------------------------------------------------------------------------------------
 //

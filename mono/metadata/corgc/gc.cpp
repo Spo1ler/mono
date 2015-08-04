@@ -32801,7 +32801,7 @@ HRESULT GCHeap::Initialize ()
 BOOL GCHeap::IsPromoted(Object* object)
 {
 #ifdef _DEBUG
-    heade(object)->Validate();
+    header(object)->Validate();
 #endif //_DEBUG
 
     BYTE* o = (BYTE*)object;

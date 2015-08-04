@@ -15,6 +15,12 @@
 #define CORGC_UTILS_API
 #endif /*TARGET_x86*/
 
+#ifdef _TARGET_ARM_
+#define SLEEP_START_THRESHOLD (5 * 1024)
+#else
+#define SLEEP_START_THRESHOLD (32 * 1024)
+#endif
+
 #define FATAL_ASSERT(e, msg)                                            \
         do                                                              \
                 {                                                       \
@@ -32,6 +38,9 @@ extern "C"
 #endif /*__cplusplus*/
 
 CORGC_UTILS_IMPORT VOID CORGC_UTILS_API FlushProcessWriteBuffers();
+
+bool SwitchToThread();
+bool __SwitchToThread (uint32_t dwSleepMSec, uint32_t dwSwitchCount);
 
 #ifdef __cplusplus
 }

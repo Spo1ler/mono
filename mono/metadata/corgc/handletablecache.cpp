@@ -18,6 +18,8 @@
 
 #include "handletablepriv.h"
 
+#include "utils.h"
+
 /****************************************************************************
  *
  * RANDOM HELPERS

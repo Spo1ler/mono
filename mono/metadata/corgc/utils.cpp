@@ -87,3 +87,28 @@ void CORGC_UTILS_API FlushProcessWriteBuffers()
     status = pthread_mutex_unlock(&flushProcessWriteBuffersMutex);
     FATAL_ASSERT(status == 0, "Failed to unlock the flushProcessWriteBuffersMutex lock");
 }
+
+bool SwitchToThread()
+{
+    bool ret;
+
+    ret = (sched_yield() == 0);
+
+    return ret;
+}
+
+bool __SwitchToThread (uint32_t dwSleepMSec, uint32_t dwSwitchCount)
+{
+    if(dwSleepMSec > 0)
+    {
+        SleepEx(dwSleepMSec, FALSE);
+        return true;
+    }
+
+    if(dwSwitchCount >= SLEEP_START_THRESHOLD)
+    {
+        SleepEx(1, FALSE);
+    }
+
+    return SwitchToThread();
+}

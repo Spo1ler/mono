@@ -1,9 +1,11 @@
 #ifndef CORGC_WRAPPER_H_
 #define CORGC_WRAPPER_H_
 
+extern "C"{
 #include <mono/metadata/object.h>
 #include <mono/metadata/object-internals.h>
 #include <mono/metadata/class-internals.h>
+}
 #include "mono/gcenv.h"
 
 #define BIT_MASK 0xffff
