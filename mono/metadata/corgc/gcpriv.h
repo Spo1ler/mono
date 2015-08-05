@@ -238,15 +238,15 @@ static inline void FATAL_GC_ERROR()
 #endif //ifdef TryEnterCriticalSection
 #define TryEnterCriticalSection UnsafeEETryEnterCriticalSection
 
-#ifdef CreateSemaphore
-#undef CreateSemaphore
-#endif //CreateSemaphore
-#define CreateSemaphore UnsafeCreateSemaphore
+/* #ifdef CreateSemaphore */
+/* #undef CreateSemaphore */
+/* #endif //CreateSemaphore */
+/* #define CreateSemaphore UnsafeCreateSemaphore */
 
-#ifdef CreateEvent
-#undef CreateEvent
-#endif //ifdef CreateEvent
-#define CreateEvent UnsafeCreateEvent
+/* #ifdef CreateEvent */
+/* #undef CreateEvent */
+/* #endif //ifdef CreateEvent */
+/* #define CreateEvent UnsafeCreateEvent */
 
 #ifdef VirtualAlloc
 #undef VirtualAlloc

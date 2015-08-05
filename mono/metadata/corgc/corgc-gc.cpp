@@ -23,6 +23,7 @@ extern "C"{
 //glue.cpp code
 extern "C"
 {
+
 extern void corgc_init (void);
 extern void corgc_attach (void);
 static gboolean gc_initialized = FALSE;
@@ -70,7 +71,7 @@ mono_gc_base_init (void)
 	if (gc_initialized)
 		return;
 
-	//mono_counters_init ();
+	mono_counters_init ();
 
 	corgc_init ();
 
@@ -82,9 +83,7 @@ mono_gc_base_init (void)
 	cb.thread_exit = mono_gc_pthread_exit;
 	cb.mono_gc_pthread_create = mono_gc_pthread_create;
 #endif
-	// mono_threads_init (&cb, sizeof (MonoThreadInfo));
-	// mono_mutex_init (&mono_gc_lock);
-
+	mono_threads_init (&cb, sizeof (MonoThreadInfo));
 	mono_thread_info_attach (&dummy);
 
 	mono_gc_enable_events ();

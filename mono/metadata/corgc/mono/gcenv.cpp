@@ -37,7 +37,50 @@
 #include <mach/mach_host.h>
 #endif // __APPLE__
 
+int32_t g_TrapReturningThreads;
+
+bool g_fFinalizerRunOnShutDown;
+
 #ifndef _WIN32
+
+Thread* GetThread()
+{
+    // TODO
+    return NULL;
+}
+
+void UnsafeInitializeCriticalSection(CRITICAL_SECTION *lpCriticalSection)
+{
+    // TODO
+}
+
+void UnsafeDeleteCriticalSection(CRITICAL_SECTION *lpCriticalSection)
+{
+    // TODO
+}
+
+void UnsafeEEEnterCriticalSection(CRITICAL_SECTION *lpCriticalSection)
+{
+    // TODO
+}
+
+void UnsafeEELeaveCriticalSection(CRITICAL_SECTION * lpCriticalSection)
+{
+    // TODO
+}
+
+void *_FastInterlockExchangePointer(void* volatile *target, void* value)
+{
+    void* result;
+
+    do
+    {
+        result = *target;
+    }
+    while(InterlockedCompareExchangePointer(target, value, result) != result);
+
+    return result;
+}
 
 void GetProcessMemoryLoad(LPMEMORYSTATUSEX lpBuffer)
 {
@@ -115,6 +158,8 @@ void GetProcessMemoryLoad(LPMEMORYSTATUSEX lpBuffer)
         lpBuffer->ullAvailPhys = lpBuffer->ullAvailVirtual;
     }
 }
+
+
 
 inline uint32_t convertProtectionFlags(uint32_t win32flags)
 {

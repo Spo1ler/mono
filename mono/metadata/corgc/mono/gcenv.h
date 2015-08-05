@@ -296,16 +296,25 @@ typedef DWORD (*PTHREAD_START_ROUTINE)(void* lpThreadParameter);
 /* FlushFileBuffers( */
 /*          HANDLE hFile); */
 
-extern "C" VOID
-_mm_pause ();
+#endif // INC_WINDOWS
 
 #ifdef _MSC_VER
-#pragma intrinsic(_mm_pause)
-#endif
 
+#pragma intrinsic(_mm_pause)
 #define YieldProcessor _mm_pause
 
-#endif // _INC_WINDOWS
+#else
+
+#include <unistd.h>
+#include <sched.h>
+
+#ifdef _POSIX_PRIORITY_SCHEDULING
+#define YieldProcessor sched_yield
+#else
+#define YieldProcessor
+#endif // _POSIX_PRIORITY_SCHEDULING
+
+#endif // _MSV_VER
 
 // -----------------------------------------------------------------------------------------------------------
 //
@@ -723,9 +732,9 @@ public:
     static void GcDone(int condemned);
 
     // Sync block cache management
-    static void SyncBlockCacheWeakPtrScan(HANDLESCANPROC scanProc, LPARAM lp1, LPARAM lp2) { }
-    static void SyncBlockCacheDemote(int max_gen) { }
-    static void SyncBlockCachePromotionsGranted(int max_gen) { }
+    static void SyncBlockCacheWeakPtrScan(HANDLESCANPROC scanProc, LPARAM lp1, LPARAM lp2);
+    static void SyncBlockCacheDemote(int max_gen);
+    static void SyncBlockCachePromotionsGranted(int max_gen);
 };
 
 class FinalizerThread

@@ -243,6 +243,9 @@ corgc_sources = \
 	corgc/objecthandle.cpp	\
 	corgc/glue.cpp	\
 	corgc/wrapper.cpp	\
+        corgc/mono/gctoee.cpp \
+        corgc/mono/threadstore.cpp \
+	corgc/mono/event.cpp
 	corgc/wrapper.h    \
 	corgc/mono/gcenv.cpp \
 	corgc/utils.cpp	\
