@@ -94,6 +94,11 @@ void GCMonoObjectWrapper::SetFree(size_t size)
     return;
 }
 
+void GCMonoObjectWrapper::UnsetFree()
+{
+    memset(this, 0, sizeof(MonoObject));
+}
+
 BOOL GCMonoObjectWrapper::IsFree() const
 {
     // TODO

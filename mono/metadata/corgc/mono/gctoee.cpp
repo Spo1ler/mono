@@ -6,6 +6,11 @@ void GCToEEInterface::SuspendEE(SUSPEND_REASON reason)
 
 }
 
+void GCToEEInterface::RestartEE(bool bFinishedGC)
+{
+
+}
+
 void GCToEEInterface::ScanStackRoots(Thread* pThread, promote_func* fn, ScanContext* sc)
 {
 
