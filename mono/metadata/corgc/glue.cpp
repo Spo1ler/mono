@@ -32,8 +32,8 @@ corgc_init ()
     InitializeSystemInfo ();
 
     g_pFreeObjectMethodTable = corgc_get_array_fill_vtable ();
-    if (!Ref_Initialize())
-        g_error ("FAILED to init handle table");
+    // if (!Ref_Initialize())
+    //     g_error ("FAILED to init handle table");
 
     GCHeap *pGCHeap = GCHeap::CreateGCHeap();
     if (!pGCHeap)

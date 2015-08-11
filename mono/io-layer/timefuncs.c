@@ -46,12 +46,16 @@ void _wapi_guint64_to_filetime (guint64 ticks, WapiFileTime *filetime)
 
 gboolean QueryPerformanceCounter(WapiLargeInteger *count G_GNUC_UNUSED)
 {
-	return(FALSE);
+    count->QuadPart = mono_100ns_ticks()*100;
+    return TRUE;
 }
 
 gboolean QueryPerformanceFrequency(WapiLargeInteger *freq G_GNUC_UNUSED)
 {
-	return(FALSE);
+    gint64 startTicks = mono_100ns_ticks();
+    gint64 endTicks = mono_100ns_ticks();
+    freq->QuadPart = (endTicks - startTicks)*100;
+    return TRUE;
 }
 
 guint32 GetTickCount (void)

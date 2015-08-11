@@ -664,9 +664,6 @@ corgc_get_array_fill_vtable (void)
 		MonoVTable* vtable = (MonoVTable*) ALIGN_TO(_vtable, 8);
 		gsize bmap;
 
-		MonoDomain *domain = mono_get_root_domain ();
-		g_assert (domain);
-
 		klass.element_class = mono_defaults.byte_class;
 		klass.rank = 1;
 		klass.instance_size = sizeof (MonoArray);

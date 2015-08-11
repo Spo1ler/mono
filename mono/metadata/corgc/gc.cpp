@@ -33388,7 +33388,7 @@ GCHeap::Alloc( size_t size, DWORD flags REQD_ALIGN_DCL)
 
     TRIGGERSGC();
 
-    assert (!GCHeap::UseAllocationContexts());
+    //assert (!GCHeap::UseAllocationContexts());
 
     Object* newAlloc = NULL;
 

@@ -184,6 +184,10 @@ inline uint32_t convertAllocationFlags(uint32_t win32flags)
     {
         result |= (MAP_PRIVATE|MAP_ANON);
     }
+    if((win32flags & WIN32_MEM_COMMIT) == WIN32_MEM_COMMIT)
+    {
+        result |= (MAP_FIXED|MAP_SHARED|MAP_ANON);
+    }
     // TODO
 
     return result;

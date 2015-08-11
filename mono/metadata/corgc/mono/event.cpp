@@ -4,20 +4,24 @@
 void CLREventStatic::CreateManualEvent(bool bInitialState)
 {
     m_hEvent = CreateEvent(NULL, TRUE, bInitialState, NULL);
+    m_fInitialized = true;
 }
 
 void CLREventStatic::CreateAutoEvent(bool bInitialState)
 {
     m_hEvent = CreateEvent(NULL, FALSE, bInitialState, NULL);
+    m_fInitialized = true;
 }
 
 void CLREventStatic::CreateOSManualEvent(bool bInitialState)
 {
     m_hEvent = CreateEvent(NULL, TRUE, bInitialState, NULL);
+    m_fInitialized = true;
 }
 void CLREventStatic::CreateOSAutoEvent(bool bInitialState)
 {
     m_hEvent = CreateEvent(NULL, TRUE, bInitialState, NULL);
+    m_fInitialized = true;
 }
 
 void CLREventStatic::CloseEvent()
