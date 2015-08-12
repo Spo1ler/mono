@@ -4029,7 +4029,7 @@ size_t generation_unusable_fragmentation (generation* inst)
 // TODO Figure out the right values for mono implementation
 
 #define plug_skew           sizeof(GCMonoObjectWrapper)
-#define min_obj_size        (plug_skew+sizeof(size_t))
+#define min_obj_size        (plug_skew)
 #define min_free_list       (sizeof(BYTE*)+min_obj_size) //Need one slot more
 //Note that this encodes the fact that plug_skew is a multiple of BYTE*.
 struct plug

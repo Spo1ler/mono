@@ -485,6 +485,11 @@ inline uint32_t FastInterlockAnd(uint32_t volatile *p, uint32_t msk)
     return __sync_fetch_and_and(p, msk);
 }
 
+inline int32_t FastInterlockCompareExchange(int32_t volatile *dest, int32_t exchange, int32_t comp)
+{
+    return __sync_val_compare_and_swap(dest, exchange, comp);
+}
+
 #define FastInterlockExchange InterlockedExchange
 #define FastInterlockIncrement InterlockedIncrement
 #define FastInterlockDecrement InterlockedDecrement
@@ -907,7 +912,7 @@ public:
     bool    IsGCBreakOnOOMEnabled()         const { return false; }
     int     GetGCgen0size  ()               const { return 0; }
     int     GetSegmentSize ()               const { return 0; }
-    int     GetGCconcurrent()               const { return 1; }
+    int     GetGCconcurrent()               const { return 0; }
     int     GetGCLatencyMode()              const { return 1; }
     int     GetGCForceCompact()             const { return 0; }
     int     GetGCRetainVM ()                const { return 0; }

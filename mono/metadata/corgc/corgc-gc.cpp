@@ -93,6 +93,8 @@ mono_gc_base_init (void)
 void
 mono_gc_collect (int generation)
 {
+    return;
+    // TODO
     if (!gc_initialized)
         return;
 

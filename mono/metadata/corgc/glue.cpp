@@ -11,6 +11,8 @@
 
 GCSystemInfo g_SystemInfo;
 
+EEConfig *g_pConfig;
+
 extern "C" {
 int mono_cpu_count ();
 int mono_pagesize ();
@@ -29,7 +31,10 @@ void InitializeSystemInfo()
 extern "C" void
 corgc_init ()
 {
+    static EEConfig config;
+    g_pConfig = &config;
     InitializeSystemInfo ();
+
 
     g_pFreeObjectMethodTable = corgc_get_array_fill_vtable ();
     // if (!Ref_Initialize())
