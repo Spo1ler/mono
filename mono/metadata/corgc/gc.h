@@ -23,8 +23,21 @@ Module Name:
 
 #endif
 
-#include "wrapper.h"
 
+#include "corgc-descriptor.h"
+
+
+typedef void (*MonoGCMarkFunc)     (void **addr, void *gc_data);
+typedef void (*MonoGCRootMarkFunc) (void *addr, MonoGCMarkFunc mark_func, void *gc_data);
+
+#define ALLOC_ALIGN 8
+#define GC_BITS_PER_WORD (sizeof(mword) * 8)
+#define CAN_ALIGN_UP(s)		((s) <= SIZE_MAX - (ALLOC_ALIGN - 1))
+#define ALIGN_UP(s)		(((s)+(ALLOC_ALIGN-1)) & ~(ALLOC_ALIGN-1))
+#define ALIGN_TO(val,align) ((((guint64)val) + ((align) - 1)) & ~((align) - 1))
+
+//#include <mono/metadata/gc-internal.h>
+#include "wrapper.h"
 /* forward declerations */
 typedef GCMonoObjectWrapper Object;
 typedef GCMonoVTableWrapper MethodTable;
@@ -107,7 +120,7 @@ struct oom_history
 class GCHeap;
 
 /* misc defines */
-#define LARGE_OBJECT_SIZE ((size_t)(85000))
+#define LARGE_OBJECT_SIZE ((size_t)(8000))
 
 GPTR_DECL(GCHeap, g_pGCHeap);
 

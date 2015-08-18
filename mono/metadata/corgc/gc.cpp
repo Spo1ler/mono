@@ -3562,7 +3562,7 @@ void gset_card (size_t card);
 #define free_object_base_size (plug_skew + sizeof(MonoArray))
 
 #define header(i) ((GCMonoObjectWrapper*)(i))
-
+#define vtable(o) (header((o))->GetMethodTable())
 #define free_list_slot(x) ((BYTE**)(x))[2]
 #define free_list_undo(x) ((BYTE**)(x))[-1]
 #define UNDO_EMPTY ((BYTE*)1)
@@ -16515,67 +16515,15 @@ BYTE* gc_heap::next_end (heap_segment* seg, BYTE* f)
 #define ignore_start 0
 #define use_start 1
 
-#define go_through_object(mt,o,size,parm,start,start_useful,limit,exp)      \
-{                                                                           \
-    CGCDesc* map = CGCDesc::GetCGCDescFromMT((MethodTable*)(mt));           \
-    CGCDescSeries* cur = map->GetHighestSeries();                           \
-    SSIZE_T cnt = (SSIZE_T) map->GetNumSeries();                            \
-                                                                            \
-    if (cnt >= 0)                                                           \
-    {                                                                       \
-        CGCDescSeries* last = map->GetLowestSeries();                       \
-        BYTE** parm = 0;                                                    \
-        do                                                                  \
-        {                                                                   \
-            assert (parm <= (BYTE**)((o) + cur->GetSeriesOffset()));        \
-            parm = (BYTE**)((o) + cur->GetSeriesOffset());                  \
-            BYTE** ppstop =                                                 \
-                (BYTE**)((BYTE*)parm + cur->GetSeriesSize() + (size));      \
-            if (!start_useful || (BYTE*)ppstop > (start))                   \
-            {                                                               \
-                if (start_useful && (BYTE*)parm < (start)) parm = (BYTE**)(start);\
-                while (parm < ppstop)                                       \
-                {                                                           \
-                   {exp}                                                    \
-                   parm++;                                                  \
-                }                                                           \
-            }                                                               \
-            cur--;                                                          \
-                                                                            \
-        } while (cur >= last);                                              \
-    }                                                                       \
-    else                                                                    \
-    {                                                                       \
-        /* Handle the repeating case - array of valuetypes */               \
-        BYTE** parm = (BYTE**)((o) + cur->startoffset);                     \
-        if (start_useful && start > (BYTE*)parm)                            \
-        {                                                                   \
-            SSIZE_T cs = mt->RawGetComponentSize();                         \
-            parm = (BYTE**)((BYTE*)parm + (((start) - (BYTE*)parm)/cs)*cs); \
-        }                                                                   \
-        while ((BYTE*)parm < ((o)+(size)-plug_skew))                        \
-        {                                                                   \
-            for (SSIZE_T __i = 0; __i > cnt; __i--)                         \
-            {                                                               \
-                HALF_SIZE_T skip =  cur->val_serie[__i].skip;               \
-                HALF_SIZE_T nptrs = cur->val_serie[__i].nptrs;              \
-                BYTE** ppstop = parm + nptrs;                               \
-                if (!start_useful || (BYTE*)ppstop > (start))               \
-                {                                                           \
-                    if (start_useful && (BYTE*)parm < (start)) parm = (BYTE**)(start);      \
-                    do                                                      \
-                    {                                                       \
-                       {exp}                                                \
-                       parm++;                                              \
-                    } while (parm < ppstop);                                \
-                }                                                           \
-                parm = (BYTE**)((BYTE*)ppstop + skip);                      \
-            }                                                               \
-        }                                                                   \
-    }                                                                       \
-}
+#define go_through_object(mt,o,size,parm,start,start_useful,limit,exp)	\
+  {									\
+    OBJ_FOREACH_PTR(o,parm,start,exp)					\
+  }									\
 
-#define go_through_object_nostart(mt,o,size,parm,exp) {go_through_object(mt,o,size,parm,o,ignore_start,(o + size),exp); }
+#define go_through_object_nostart(mt,o,size,parm,exp)			\
+  {									\
+    go_through_object(mt,o,size,parm,o,ignore_start,(o + size),exp);	\
+  }									\
 
 // 1 thing to note about this macro:
 // 1) you can use *parm safely but in general you don't want to use parm 
@@ -16853,7 +16801,7 @@ void gc_heap::mark_object_simple1 (BYTE* oo, BYTE* start THREAD_NUMBER_DCL)
 
                     go_through_object_cl (method_table(oo), oo, s, ppslot,
                                           {
-                                              BYTE* o = *ppslot;
+					      BYTE* o = (BYTE*)*ppslot;
                                               Prefetch(o);
                                               if (gc_mark (o, gc_low, gc_high))
                                               {
@@ -16943,7 +16891,7 @@ void gc_heap::mark_object_simple1 (BYTE* oo, BYTE* start THREAD_NUMBER_DCL)
                     go_through_object (method_table(oo), oo, s, ppslot,
                                        start, use_start, (oo + s),
                                        {
-                                           BYTE* o = *ppslot;
+					 BYTE* o = (BYTE*)*ppslot;
                                            Prefetch(o);
                                            if (gc_mark (o, gc_low, gc_high))
                                            {
@@ -17386,7 +17334,7 @@ gc_heap::mark_object_simple (BYTE** po THREAD_NUMBER_DCL)
             {
                 go_through_object_cl (method_table(o), o, s, poo,
                                         {
-                                            BYTE* oo = *poo;
+					  BYTE* oo = (BYTE*)*poo;
                                             if (gc_mark (oo, gc_low, gc_high))
                                             {
                                                 m_boundary (oo);
@@ -18270,7 +18218,7 @@ void gc_heap::mark_through_object (BYTE* oo, BOOL mark_class_object_p THREAD_NUM
         if (contain_pointers (oo))
         {
             go_through_object_nostart (method_table(oo), oo, s, po,
-                                BYTE* o = *po;
+				       BYTE* o = (BYTE*)*po;
                                 mark_object (o THREAD_NUMBER_ARG);
                                 );
         }
@@ -20335,7 +20283,7 @@ void gc_heap::relocate_in_loh_compact()
             {
                 go_through_object_nostart (method_table (o), o, size(o), pval,
                 {
-                    reloc_survivor_helper (pval);
+		  reloc_survivor_helper ((BYTE**)pval);
                 });
             }
 
@@ -22609,8 +22557,8 @@ gc_heap::relocate_obj_helper (BYTE* x, size_t s)
 
         go_through_object_nostart (method_table(x), x, s, pval,
                             {
-                                BYTE* child = *pval;
-                                reloc_survivor_helper (pval);
+  			        BYTE* child = (BYTE*)*pval;
+                                reloc_survivor_helper ((BYTE**)pval);
                                 if (child)
                                 {
                                     dprintf (3, ("%Ix->%Ix->%Ix", (BYTE*)pval, child, *pval));
@@ -22737,13 +22685,13 @@ void gc_heap::relocate_shortened_obj_helper (BYTE* x, size_t s, BYTE* end, mark*
             {
                 current_saved_info_to_relocate = saved_info_to_relocate + ((BYTE*)pval - saved_plug_info_start) / sizeof (BYTE**);
                 child = *current_saved_info_to_relocate;
-                reloc_ref_in_shortened_obj (pval, current_saved_info_to_relocate);
+                reloc_ref_in_shortened_obj ((BYTE**)pval, current_saved_info_to_relocate);
                 dprintf (3, ("last part: R-%Ix(saved: %Ix)->%Ix ->%Ix",
                     (BYTE*)pval, current_saved_info_to_relocate, child, *current_saved_info_to_relocate));
             }
             else
             {
-                reloc_survivor_helper (pval);
+	      reloc_survivor_helper ((BYTE**)pval);
             }
         });
     }
@@ -27052,10 +27000,12 @@ go_through_refs:
                                         {
                                              //new_start();
                                              {
-                                                 if (ppstop <= (BYTE**)start_address)
-                                                     {break;}
-                                                 else if (poo < (BYTE**)start_address)
-                                                     {poo = (BYTE**)start_address;}
+					       // TODO
+                                                 // if (ppstop <= start_address)
+                                                 //     {break;}
+                                                 // else
+					       if (poo < (void**)start_address)
+						 {poo = (void**)start_address;}
                                              }
                                         }
                                         else if (foundp && (start_address < limit))
@@ -27068,7 +27018,7 @@ go_through_refs:
                                      }
                                  }
 
-                                 mark_through_cards_helper (poo, n_gen,
+                                 mark_through_cards_helper ((BYTE**)poo, n_gen,
                                                             cg_pointers_found, fn,
                                                             nhigh, next_boundary);
                              }
@@ -30883,7 +30833,7 @@ void gc_heap::relocate_in_large_objects ()
                 dprintf(3, ("Relocating through large object %Ix", (size_t)o));
                 go_through_object_nostart (method_table (o), o, size(o), pval,
                         {
-                            reloc_survivor_helper (pval);
+			  reloc_survivor_helper ((BYTE**)pval);
                         });
             }
             o = o + AlignQword (size (o));
@@ -31091,10 +31041,12 @@ go_through_refs:
                                     {
                                         //new_start();
                                         {
-                                            if (ppstop <= (BYTE**)start_address)
-                                            {break;}
-                                            else if (poo < (BYTE**)start_address)
-                                            {poo = (BYTE**)start_address;}
+					  // TODO
+                                            // if (ppstop <= (BYTE**)start_address)
+                                            // {break;}
+                                            // else
+					    if (poo < (void**)start_address)
+                                            {poo = (void**)start_address;}
                                         }
                                     }
                                     else
@@ -31104,7 +31056,7 @@ go_through_refs:
                                 }
                             }
 
-                           mark_through_cards_helper (poo, n_gen,
+                           mark_through_cards_helper ((BYTE**)poo, n_gen,
                                                       cg_pointers_found, fn,
                                                       nhigh, next_boundary);
                        }
@@ -32633,34 +32585,34 @@ HRESULT GCHeap::Shutdown ()
     return S_OK;
 }
 
-//used by static variable implementation
-void CGCDescGcScan(LPVOID pvCGCDesc, promote_func* fn, ScanContext* sc)
-{
-    CGCDesc* map = (CGCDesc*)pvCGCDesc;
+// //used by static variable implementation
+// void CGCDescGcScan(LPVOID pvCGCDesc, promote_func* fn, ScanContext* sc)
+// {
+//     CGCDesc* map = (CGCDesc*)pvCGCDesc;
 
-    CGCDescSeries *last = map->GetLowestSeries();
-    CGCDescSeries *cur = map->GetHighestSeries();
+//     CGCDescSeries *last = map->GetLowestSeries();
+//     CGCDescSeries *cur = map->GetHighestSeries();
 
-    assert (cur >= last);
-    do
-    {
-        BYTE** ppslot = (BYTE**)((BYTE*)pvCGCDesc + cur->GetSeriesOffset());
-        BYTE**ppstop = (BYTE**)((BYTE*)ppslot + cur->GetSeriesSize());
+//     assert (cur >= last);
+//     do
+//     {
+//         BYTE** ppslot = (BYTE**)((BYTE*)pvCGCDesc + cur->GetSeriesOffset());
+//         BYTE**ppstop = (BYTE**)((BYTE*)ppslot + cur->GetSeriesSize());
 
-        while (ppslot < ppstop)
-        {
-            if (*ppslot)
-            {
-                (fn) ((Object**)ppslot, sc, 0);
-            }
+//         while (ppslot < ppstop)
+//         {
+//             if (*ppslot)
+//             {
+//                 (fn) ((Object**)ppslot, sc, 0);
+//             }
 
-            ppslot++;
-        }
+//             ppslot++;
+//         }
 
-        cur--;
-    }
-    while (cur >= last);
-}
+//         cur--;
+//     }
+//     while (cur >= last);
+// }
 
 // Wait until a garbage collection is complete
 // returns NOERROR if wait was OK, other error code if failure.

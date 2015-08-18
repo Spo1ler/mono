@@ -126,3 +126,4 @@ mono.spec
 mono-core.spec
 tmpinst-dir.stamp
 
+mono-corgc

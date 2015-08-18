@@ -170,12 +170,7 @@ public:
 
     static PTR_CGCDesc GetCGCDescFromMT (MethodTable * pMT)
     {
-        // If it doesn't contain pointers, there isn't a GCDesc
-        PTR_MethodTable mt(pMT);
-#ifndef BINDER
-        _ASSERTE(mt->ContainsPointersOrCollectible());
-#endif
-        return PTR_CGCDesc(mt);
+      return (PTR_CGCDesc)pMT->gc_descr;
     }
 
     size_t GetNumSeries ()
