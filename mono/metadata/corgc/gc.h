@@ -26,10 +26,6 @@ Module Name:
 
 #include "corgc-descriptor.h"
 
-
-typedef void (*MonoGCMarkFunc)     (void **addr, void *gc_data);
-typedef void (*MonoGCRootMarkFunc) (void *addr, MonoGCMarkFunc mark_func, void *gc_data);
-
 #define ALLOC_ALIGN 8
 #define GC_BITS_PER_WORD (sizeof(mword) * 8)
 #define CAN_ALIGN_UP(s)		((s) <= SIZE_MAX - (ALLOC_ALIGN - 1))

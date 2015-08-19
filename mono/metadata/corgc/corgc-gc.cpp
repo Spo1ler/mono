@@ -10,6 +10,8 @@ extern "C"
 }
 
 #include <mono/metadata/corgc/gc.h>
+#include <mono/metadata/corgc/objecthandle.h>
+
 #include "corgc-descriptor.cpp"
 
 //glue.cpp code
@@ -171,19 +173,26 @@ mono_gc_deregister_root (char* addr)
 void
 mono_gc_weak_link_add (void **link_addr, MonoObject *obj, gboolean track)
 {
-
+  *link_addr = track ? (void*)CreateGlobalLongWeakHandle(header(obj)) : (void*)CreateGlobalShortWeakHandle(header(obj));
 }
 
 void
 mono_gc_weak_link_remove (void **link_addr, gboolean track)
 {
-
+  if(track)
+  {
+    DestroyGlobalStrongHandle((OBJECTHANDLE)*link_addr);
+  }
+  else
+  {
+    DestroyGlobalWeakHandle((OBJECTHANDLE)*link_addr);
+  }
 }
 
 MonoObject*
 mono_gc_weak_link_get (void **link_addr)
 {
-  return NULL;
+  return ObjectFromHandle((OBJECTHANDLE)*link_addr);
 }
 
 void*
@@ -412,7 +421,7 @@ mono_gc_precise_stack_mark_enabled (void)
 FILE *
 mono_gc_get_logfile (void)
 {
-	return NULL;
+  return NULL;
 }
 
 void
@@ -447,7 +456,7 @@ mono_gc_get_los_limit (void)
 gboolean
 mono_gc_user_markers_supported (void)
 {
-	return FALSE;
+  return FALSE;
 }
 
 #ifndef HOST_WIN32
@@ -455,25 +464,25 @@ mono_gc_user_markers_supported (void)
 int
 mono_gc_pthread_create (pthread_t *new_thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
-	return pthread_create (new_thread, attr, start_routine, arg);
+  return pthread_create (new_thread, attr, start_routine, arg);
 }
 
 int
 mono_gc_pthread_join (pthread_t thread, void **retval)
 {
-	return pthread_join (thread, retval);
+  return pthread_join (thread, retval);
 }
 
 int
 mono_gc_pthread_detach (pthread_t thread)
 {
-	return pthread_detach (thread);
+  return pthread_detach (thread);
 }
 
 void
 mono_gc_pthread_exit (void *retval)
 {
-	pthread_exit (retval);
+  pthread_exit (retval);
 }
 
 void mono_gc_set_skip_thread (gboolean value)
@@ -484,14 +493,14 @@ void mono_gc_set_skip_thread (gboolean value)
 #ifdef HOST_WIN32
 BOOL APIENTRY mono_gc_dllmain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 {
-	return TRUE;
+  return TRUE;
 }
 #endif
 
 guint
 mono_gc_get_vtable_bits (MonoClass *klass)
 {
-	return 0;
+  return 0;
 }
 
 void
@@ -502,132 +511,134 @@ mono_gc_register_altstack (gpointer stack, gint32 stack_size, gpointer altstack,
 gboolean
 mono_gc_set_allow_synchronous_major (gboolean flag)
 {
-	return TRUE;
+  return TRUE;
 }
 
 int
 mono_gc_invoke_finalizers (void)
 {
-	return 0;
+  return 0;
 }
 
 gboolean
 mono_gc_pending_finalizers (void)
 {
-	return FALSE;
+  return FALSE;
 }
 void
 mono_gc_set_string_length (MonoString *str, gint32 new_length)
 {
-	str->length = new_length;
+  str->length = new_length;
 }
 
 //moving collector extra callbacks
 gboolean
 mono_gc_ephemeron_array_add (MonoObject *obj)
 {
-	return FALSE;
+  return FALSE;
 }
 
 int
 mono_gc_finalizers_for_domain (MonoDomain *domain, MonoObject **out_array, int out_size)
 {
-	return 0;
+  return 0;
 }
 
 void
 mono_gc_register_for_finalization (MonoObject *obj, void *user_data)
 {
-	
+
 }
 
 int
 mono_gc_register_root_wbarrier (char *start, size_t size, void *descr)
 {
-	return TRUE;
+  return TRUE;
 }
 
 void*
 mono_gc_alloc_obj (MonoVTable *vtable, size_t size)
 {
-	int flags = 0;
-	if(vtable->klass->has_references)
-		flags |= GC_ALLOC_CONTAINS_REF;
+  int flags = 0;
+  if(vtable->klass->has_references)
+    flags |= GC_ALLOC_CONTAINS_REF;
 
-	if(mono_class_has_finalizer(vtable->klass))
-		flags |= GC_ALLOC_FINALIZE;
+  if(mono_class_has_finalizer(vtable->klass))
+    flags |= GC_ALLOC_FINALIZE;
 
-    MonoObject* obj = heap()->Alloc(size, flags);
-    obj->vtable = vtable;
+  MonoObject* obj = heap()->Alloc(size, flags);
+  obj->vtable = vtable;
 
-	return obj;
+  return obj;
 }
 
 void*
 mono_gc_alloc_vector (MonoVTable *vtable, size_t size, uintptr_t max_length)
 {
-	MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);
-	arr->max_length = (mono_array_size_t)max_length;
-	return arr;
+  MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);
+  arr->max_length = (mono_array_size_t)max_length;
+  return arr;
 }
 
 
 void*
 mono_gc_alloc_array (MonoVTable *vtable, size_t size, uintptr_t max_length, uintptr_t bounds_size)
 {
-	MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);
-	MonoArrayBounds *bounds = (MonoArrayBounds*)((char*)arr + size - bounds_size);
+  MonoArray *arr = (MonoArray *)mono_gc_alloc_obj (vtable, size);
+  MonoArrayBounds *bounds = (MonoArrayBounds*)((char*)arr + size - bounds_size);
 
-	arr->max_length = (mono_array_size_t)max_length;
-	arr->bounds = bounds;
-	return arr;
+  arr->max_length = (mono_array_size_t)max_length;
+  arr->bounds = bounds;
+  return arr;
 }
 
 void*
 mono_gc_alloc_string (MonoVTable *vtable, size_t size, gint32 len)
 {
-	MonoString *str = (MonoString *)mono_gc_alloc_obj (vtable, size);
+  MonoString *str = (MonoString *)mono_gc_alloc_obj (vtable, size);
 
-	str->length = len;
-	return str;
+  str->length = len;
+  return str;
 }
 
 void*
 mono_gc_alloc_pinned_obj (MonoVTable *vtable, size_t size)
 {
-	return mono_gc_alloc_obj (vtable, size);
+  GCMonoObjectWrapper* obj = (GCMonoObjectWrapper*)mono_gc_alloc_obj (vtable, size);
+  CreateGlobalPinningHandle(header(obj));
+  return obj;
 }
 
 void*
 mono_gc_alloc_mature (MonoVTable *vtable)
 {
-	return mono_gc_alloc_obj (vtable, vtable->klass->instance_size);
+  return mono_gc_alloc_obj (vtable, vtable->klass->instance_size);
 }
 
 //Functions needed by the CoreCLR GC
 void*
 corgc_get_array_fill_vtable (void)
 {
-	if (!array_fill_vtable) {
-		static MonoClass klass;
-		static char _vtable[sizeof(MonoVTable)+8];
-		MonoVTable* vtable = (MonoVTable*) ALIGN_TO(_vtable, 8);
-		gsize bmap;
+  if (!array_fill_vtable) {
+    static MonoClass klass;
+    static char _vtable[sizeof(MonoVTable)+8];
+    MonoVTable* vtable = (MonoVTable*) ALIGN_TO(_vtable, 8);
+    gsize bmap;
 
-		klass.element_class = mono_defaults.byte_class;
-		klass.rank = 1;
-		klass.instance_size = sizeof (MonoArray);
-		klass.sizes.element_size = 1;
-		klass.name = "array_filler_type";
+    klass.element_class = mono_defaults.byte_class;
+    klass.rank = 1;
+    klass.instance_size = sizeof (MonoArray);
+    klass.sizes.element_size = 1;
+    klass.name = "array_filler_type";
 
-		vtable->klass = &klass;
-		bmap = 0;
-		vtable->gc_descr = mono_gc_make_descr_for_array (TRUE, &bmap, 0, 1);
-		vtable->rank = 1;
+    vtable->klass = &klass;
+    bmap = 0;
+    vtable->gc_descr = mono_gc_make_descr_for_array (TRUE, &bmap, 0, 1);
+    vtable->rank = 1;
 
-		array_fill_vtable = vtable;
-	}
-	return array_fill_vtable;
+    array_fill_vtable = vtable;
+  }
+  return array_fill_vtable;
 }
 
 }

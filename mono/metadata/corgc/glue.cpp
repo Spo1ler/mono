@@ -23,34 +23,34 @@ MethodTable * g_pFreeObjectMethodTable;
 
 void InitializeSystemInfo()
 {
-    g_SystemInfo.dwNumberOfProcessors = mono_cpu_count ();
-    g_SystemInfo.dwPageSize = mono_pagesize ();
-    g_SystemInfo.dwAllocationGranularity = mono_pagesize ();
+  g_SystemInfo.dwNumberOfProcessors = mono_cpu_count ();
+  g_SystemInfo.dwPageSize = mono_pagesize ();
+  g_SystemInfo.dwAllocationGranularity = mono_pagesize ();
 }
 
 extern "C" void
 corgc_init ()
 {
-    static EEConfig config;
-    g_pConfig = &config;
-    InitializeSystemInfo ();
+  static EEConfig config;
+  g_pConfig = &config;
+  InitializeSystemInfo ();
 
 
-    g_pFreeObjectMethodTable = corgc_get_array_fill_vtable ();
-    // if (!Ref_Initialize())
-    //     g_error ("FAILED to init handle table");
+  g_pFreeObjectMethodTable = corgc_get_array_fill_vtable ();
+  if (!Ref_Initialize())
+    g_error ("FAILED to init handle table");
 
-    GCHeap *pGCHeap = GCHeap::CreateGCHeap();
-    if (!pGCHeap)
-        g_error ("FAILED to create GC HEAP");
+  GCHeap *pGCHeap = GCHeap::CreateGCHeap();
+  if (!pGCHeap)
+    g_error ("FAILED to create GC HEAP");
 
 
-    if (FAILED(pGCHeap->Initialize()))
-        g_error ("FAILED to initialize GC HEAP");
+  if (FAILED(pGCHeap->Initialize()))
+      g_error ("FAILED to initialize GC HEAP");
 }
 
 extern "C" void
 corgc_attach ()
 {
-    ThreadStore::AttachCurrentThread(false);
+  ThreadStore::AttachCurrentThread(false);
 }

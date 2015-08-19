@@ -106,7 +106,7 @@ typedef guint64 mword;
     /* there are pointers */						\
     gsize desc = (gsize)(((MonoVTable*)(vt))->gc_descr);		\
     void **parm = (void**)(obj);					\
-    gsize *bitmap_data = corgc_get_complex_descriptor ((desc));		\
+    gsize *bitmap_data = corgc_get_complex_descriptor (desc);		\
     gsize bwords = (*bitmap_data) - 1;					\
     void **start_run = parm;						\
     bitmap_data++;							\
