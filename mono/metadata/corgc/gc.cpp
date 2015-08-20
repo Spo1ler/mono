@@ -8332,7 +8332,9 @@ retry:
 inline size_t my_get_size(Object* o)
 {
     MonoVTable* mT = header(o)->GetMethodTable();
+    g_assert(mT != NULL);
     MonoClass* c = mT->klass;
+    g_assert(c != NULL);
     return mono_class_instance_size(c) + (MONO_CLASS_IS_ARRAY(c)) ? (header(o)->GetNumComponents() * mono_array_element_size(c)) : 0;
 }
 

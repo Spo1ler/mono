@@ -21,6 +21,10 @@
 #endif
 
 #include <mono/metadata/class-internals.h>
+extern "C"
+{
+#include <mono/utils/mono-threads.h>
+}
 
 #ifdef _MSC_VER
 #define FORCEINLINE __forceinline
@@ -636,17 +640,16 @@ bool ClrVirtualUnlock(
 
 struct alloc_context;
 
-class Thread
+class CorgcThreadInfo : MonoThreadInfo
 {
-    uint32_t m_fPreemptiveGCDisabled;
     uintptr_t m_alloc_context[16]; // Reserve enough space to fix allocation context
-
+    CorgcThreadInfo* m_pNext;
+    uint32_t m_fPreemptiveGCDisabled;
     friend class ThreadStore;
-    Thread * m_pNext;
-
 public:
-    Thread()
+    CorgcThreadInfo()
     {
+        m_fPreemptiveGCDisabled = TRUE;
     }
 
     bool PreemptiveGCDisabled()
@@ -681,14 +684,17 @@ public:
     }
 };
 
+typedef CorgcThreadInfo Thread;
+
 Thread * GetThread();
 
 class ThreadStore
 {
 public:
-    static Thread * GetThreadList(Thread * pThread);
-
+    static Thread* GetThreadList(Thread * pThread);
     static void AttachCurrentThread(bool fAcquireThreadStoreLock);
+private:
+    static Thread* m_pThreadList;
 };
 
 struct ScanContext;

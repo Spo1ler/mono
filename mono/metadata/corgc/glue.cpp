@@ -52,5 +52,5 @@ corgc_init ()
 extern "C" void
 corgc_attach ()
 {
-  ThreadStore::AttachCurrentThread(false);
+  ThreadStore::AttachCurrentThread(true);
 }
